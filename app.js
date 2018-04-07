@@ -20,10 +20,12 @@ var Entity = function(){
 		spdY:0,
 		accX:0,
 		accY:0,
+		grav:10, //Personal gravity stat
 		id:""
 	}
 	self.update = function(){
 		self.updatePosition();
+		self.spdY += self.grav
 	}
 	self.updatePosition = function(){
 		self.spdX += self.accX;
@@ -86,6 +88,7 @@ var Player = function(id){
 		self.spdY += self.accY;
 		self.accX = 0;
 		self.accY = 0;
+    
     }
     Player.list[id] = self;
     return self;
