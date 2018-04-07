@@ -55,18 +55,22 @@ var Player = function(id){
     }
 
     self.updateSpd = function(){
-        if(self.pressingRight)
+        
+    	if(self.pressingRight && self.pressingLeft) 
+        	self.spdX = 0;
+        else if(self.pressingRight)
             self.spdX = self.maxSpd;
         else if(self.pressingLeft)
             self.spdX = -self.maxSpd;
         else
         	self.spdX = 0;
 
-        if(self.pressingUp)
+        if(self.pressingUp && self.pressingDown)
+        	self.spdY = 0;
+        else if(self.pressingUp)
             self.spdY = -self.maxSpd;
         else if(self.pressingDown)
             self.spdY = self.maxSpd;
-
     }
     Player.list[id] = self;
     return self;
