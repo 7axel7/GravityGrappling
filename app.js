@@ -56,6 +56,8 @@ var Player = function(id){
             self.spdX = self.maxSpd;
         else if(self.pressingLeft)
             self.spdX = -self.maxSpd;
+        else if(self.pressingRight and self.pressingLeft) 
+        	self.spdX = 0;
         else
         	self.spdX = 0;
 
@@ -63,6 +65,8 @@ var Player = function(id){
             self.spdY = -self.maxSpd;
         else if(self.pressingDown)
             self.spdY = self.maxSpd;
+        else if(self.pressingUp and self.pressingDown)
+        	self.spdY = 0;
         else
         	self.spdY = 0;
     }
