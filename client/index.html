@@ -5,17 +5,45 @@
 </script>
 <script>
 	var socket = io(); //Connect to server
-	var c = document.getElementById("myCanvas");
+	var c = document.getElementById("myCanvas"); //Creates canvas
 	var ctx = c.getContext("2d");
 
+	document.onkeydown = function(event){ //Key Down Detector
+        if(event.keyCode === 68)      //d
+            socket.emit('keyPress',{inputId:'right',state:true});
+        else if(event.keyCode === 83) //s
+            socket.emit('keyPress',{inputId:'down',state:true});
+        else if(event.keyCode === 65) //a
+            socket.emit('keyPress',{inputId:'left',state:true});
+        else if(event.keyCode === 87) //w
+            socket.emit('keyPress',{inputId:'up',state:true});
+           
+    }
 
-	socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
+    document.onkeyup = function(event){ // Key Up Detector
+        if(event.keyCode === 68)      //d
+            socket.emit('keyPress',{inputId:'right',state:false});
+        else if(event.keyCode === 83) //s
+            socket.emit('keyPress',{inputId:'down',state:false});
+        else if(event.keyCode === 65) //a
+            socket.emit('keyPress',{inputId:'left',state:false});
+        else if(event.keyCode === 87) //w
+            socket.emit('keyPress',{inputId:'up',state:false});
+    }
 
-	socket.on('serverMsg',function(data){ //listens for serverMsg
-		console.log(data.msg);
-	});
+    document.onmousedown = function(event){ //Mouse Down Detector
+    	socket.emit('keyPress',{inputId:'lClick',state:true});
+    }
 
-	ctx.moveTo(0, 0);
-	ctx.lineTo(600, 600);
-	ctx.stroke();
+    document.onmouseup = function(event){ //Mouse Down Detector
+    	socket.emit('keyPress',{inputId:'lClick',state:false});
+    }
+
+    document.onmousemove = function(event){ //Mouse Move Detector
+    	var x = -250 + event.clientX - 8;
+    	var y = -250 + event.clientY - 8;
+    	var angle = Math.atan2(y,x)/Math.PI*180;
+    	socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
+    }
+
 </script>

@@ -19,6 +19,28 @@ io.sockets.on('connection',function(socket){
 	socket.y = 0;
 	SOCKET_LIST[socket.id] = socket;
 	console.log('socket connection') 
+
+/* socket.on('keyPress',function(data){
+        if(data.inputId === 'left')
+            player.pressingLeft = data.state;
+        else if(data.inputId === 'right')
+            player.pressingRight = data.state;
+        else if(data.inputId === 'up')
+            player.pressingUp = data.state;
+        else if(data.inputId === 'down')
+            player.pressingDown = data.state;
+        else if(data.inputId === 'attack')
+        	player.pressingAttack = data.state;
+        else if(data.inputId === 'mouseAngle')
+        	player.mouseAngle = data.state;
+    });
+
+
+
+
+
+
+
 	//socket.on('happy',function(data){ //listens for message happy
 	//	console.log('happy because' + data.reason);
 	//});
@@ -26,4 +48,6 @@ io.sockets.on('connection',function(socket){
 	//socket.emit('serverMsg',{
 	//	msg:'hello',
 	//});
+
+	*/
 });
