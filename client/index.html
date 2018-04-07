@@ -1,0 +1,21 @@
+<canvas id="myCanvas" width="800" height="800"></canvas>
+
+
+<script src="https://cdn.socket.io/socket.io-1.4.5.js">
+</script>
+<script>
+	var socket = io(); //Connect to server
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+
+
+	socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
+
+	socket.on('serverMsg',function(data){ //listens for serverMsg
+		console.log(data.msg);
+	});
+
+	ctx.moveTo(0, 0);
+	ctx.lineTo(600, 600);
+	ctx.stroke();
+</script>
