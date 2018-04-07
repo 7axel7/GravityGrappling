@@ -7,12 +7,11 @@
 	var socket = io(); //Connect to server
 	var c = document.getElementById("myCanvas"); //Creates canvas
 	var ctx = c.getContext("2d");
-	var socket = io(); //Connect to server
 
 	socket.on('newPositions',function(data){ //listens for newPositions
 		ctx.clearRect(0,0,500,500);
-		for(var i = 0 ; i < data.length; i++) // Loop through every player
-			ctx.fillText('P',data[i].x,data[i].y)
+		for(var i = 0; i < data.player.length; i++)
+			ctx.fillText(data.player[i].number,data.player[i].x,data.player[i].y);
 	});
 
     socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
