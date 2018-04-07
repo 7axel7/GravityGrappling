@@ -1,13 +1,18 @@
-<canvas id="myCanvas" width="800" height="800"></canvas>
+<canvas id="myCanvas" width="600" height="600" style="border:1px solid #000000"></canvas>
 
 
 <script src="https://cdn.socket.io/socket.io-1.4.5.js">
 </script>
 <script>
-	var socket = io(); //Connect to server
 	var c = document.getElementById("myCanvas");
 	var ctx = c.getContext("2d");
+	var socket = io(); //Connect to server
 
+	socket.on('newPositions',function(data){ //listens for newPositions
+		ctx.clearRect(0,0,500,500);
+		for(var i = 0 ; i < data.length; i++) // Loop through every player
+			ctx.fillText('P',data[i].x,data[i].y)
+	});
 
 	socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
 
