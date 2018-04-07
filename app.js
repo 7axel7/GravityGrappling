@@ -19,6 +19,10 @@ io.sockets.on('connection',function(socket){
 	SOCKET_LIST[socket.id] = socket;
 	console.log('socket connection') 
 
+	socket.on('disconnect',function(){
+		delete SOCKET_LIST[socket.id];
+	});
+
 /* socket.on('keyPress',function(data){
         if(data.inputId === 'left')
             player.pressingLeft = data.state;
