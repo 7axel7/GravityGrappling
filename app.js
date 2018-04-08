@@ -18,6 +18,8 @@ var Entity = function(){
 		y:250,
 		spdX:0,
 		spdY:0,
+		accX:0,
+		accY:0,
 		grav:10, //Personal gravity stat
 		id:""
 	}
@@ -26,9 +28,12 @@ var Entity = function(){
 		self.spdY += self.grav
 	}
 	self.updatePosition = function(){
-		;
+		self.spdX += self.accX;
+		self.spdY += self.accY;
 		self.x += self.spdX;
 		self.y += self.spdY;
+		self.accX = 0;
+		self.accY = 0;
 	}
 	self.getDistance = function(pt){
 		return Math.sqrt(Math.pow(self.x-pt.x,2) + Math.pow(self.y-pt.y,2));
@@ -46,7 +51,8 @@ var Player = function(id){
     self.pressingDown = false;
     self.pressingLeftClick = false;
     self.mouseAngle = 0;
-    self.maxSpd = 10;
+    self.spdStat = 10;
+
     
     var super_update = self.update;
     self.update = function(){
@@ -55,22 +61,34 @@ var Player = function(id){
     }
 
     self.updateSpd = function(){
-        
-    	if(self.pressingRight && self.pressingLeft) 
-        	self.spdX = 0;
-        else if(self.pressingRight)
-            self.spdX = self.maxSpd;
-        else if(self.pressingLeft)
-            self.spdX = -self.maxSpd;
-        else
-        	self.spdX = 0;
+        if(self.pressingRight)
+        	if(self.spdX > 0)
+            	self.accX += self.spdStat/(1+self.spdX);
+        	else 
+        		self.accX += self.spdStat;
+   	 	
+        if(self.pressingLeft)
+        	if(self.spdX < 0)
+            	self.accX += -self.spdStat/(1-self.spdX);
+        	else 
+        		self.accX += -self.spdStat;
 
-        if(self.pressingUp && self.pressingDown)
-        	self.spdY = 0;
-        else if(self.pressingUp)
-            self.spdY = -self.maxSpd;
-        else if(self.pressingDown)
-            self.spdY = self.maxSpd;
+    	if(self.spdX > 0){
+    		if(self.spdX > 1.5){self.accX -= 1.5;
+    		} else {self.spdX = 0;}
+    		
+    	}
+
+    	if(self.spdX < 0){
+    		if(self.spdX < -1.5){self.accX += 1.5;
+    		} else {self.spdX = 0;}
+    	}
+
+        self.spdX += self.accX;
+		self.spdY += self.accY;
+		self.accX = 0;
+		self.accY = 0;
+    
     }
     Player.list[id] = self;
     return self;
