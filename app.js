@@ -126,6 +126,7 @@ var Block = function(id){
 	}
 	self.id = id;
 	Block.list[id] = self;
+	return self;
 }
 
 Block.list = {};
@@ -135,10 +136,11 @@ Block.update = function(){
 
 	for(var i in Block.list){
 		var block = Block.list[i];
-		Block.update();
 		pack.push({
-			x:block.x,
-			y:block.y,
+			x1:block.x1,
+			y1:block.y1,
+			x2:block.x2,
+			y2:block.y2,
 		});
 	}
 	return pack;
