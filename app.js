@@ -14,13 +14,14 @@ var SOCKET_LIST = {};
 
 var Entity = function(){
 	var self = {
+		fric:1, //how much friction affects movement
 		x:250,
 		y:250,
 		spdX:0,
 		spdY:0,
 		accX:0,
 		accY:0,
-		grav:10, //Personal gravity stat
+		grav:0, //Personal gravity stat
 		id:""
 	}
 	self.update = function(){
@@ -34,6 +35,15 @@ var Entity = function(){
 		self.y += self.spdY;
 		self.accX = 0;
 		self.accY = 0;
+		var friction = self.fric;
+		if (self.spdX < 0){
+			friction = -1*friction;
+		}
+		if (Math.abs(friction) < Math.abs(self.spdX)){ // friction doesnt completely stop object
+			self.spdX -= friction;
+		} else {
+			self.spdX = 0; // friction completely stops object
+		}
 	}
 	self.getDistance = function(pt){
 		return Math.sqrt(Math.pow(self.x-pt.x,2) + Math.pow(self.y-pt.y,2));
@@ -60,34 +70,22 @@ var Player = function(id){
     	super_update();
     }
 
+    self.determineSpd = function(velocity,direction,spdStat){
+        var temp = direction*spdStat; // spdStat is speed limit
+        var speed = 1*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
+        // changing 1 to some other value will change how fast acceleration is.
+        return speed;
+    }
+
     self.updateSpd = function(){
-        if(self.pressingRight)
-        	if(self.spdX > 0)
-            	self.accX += self.spdStat/(1+self.spdX);
-        	else 
-        		self.accX += self.spdStat;
-   	 	
-        if(self.pressingLeft)
-        	if(self.spdX < 0)
-            	self.accX += -self.spdStat/(1-self.spdX);
-        	else 
-        		self.accX += -self.spdStat;
+        if(self.pressingRight){
+        	self.accX += self.determineSpd(self.spdX,1,self.spdStat)
+        }
 
-    	if(self.spdX > 0){
-    		if(self.spdX > 1.5){self.accX -= 1.5;
-    		} else {self.spdX = 0;}
-    		
-    	}
+        if(self.pressingLeft){
+        	self.accX += self.determineSpd(self.spdX,-1,self.spdStat)
 
-    	if(self.spdX < 0){
-    		if(self.spdX < -1.5){self.accX += 1.5;
-    		} else {self.spdX = 0;}
-    	}
-
-        self.spdX += self.accX;
-		self.spdY += self.accY;
-		self.accX = 0;
-		self.accY = 0;
+        }
     
     }
     Player.list[id] = self;
