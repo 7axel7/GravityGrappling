@@ -132,6 +132,42 @@ Player.update = function(){
 	return pack;
 }
 
+var Block = function(id){
+	var self = {
+		x1:0,
+		y1:0,
+		x2:0,
+		y2:0,
+		id:""
+	}
+	self.id = id;
+	Block.list[id] = self;
+	return self;
+}
+
+Block.list = {};
+
+Block.update = function(){
+	var pack = [];
+
+	for(var i in Block.list){
+		var block = Block.list[i];
+		pack.push({
+			x1:block.x1,
+			y1:block.y1,
+			x2:block.x2,
+			y2:block.y2,
+		});
+	}
+	return pack;
+}
+
+var blockTest = new Block(1);
+	blockTest.x1=100;
+	blockTest.y1=100;
+	blockTest.x2=300;
+	blockTest.y2=350;
+
 
 var io = require('socket.io')(serv,{});//listens when someone connects
 io.sockets.on('connection',function(socket){
@@ -158,7 +194,8 @@ io.sockets.on('connection',function(socket){
 
 setInterval(function(){
 	var pack = {
-		player:Player.update()
+		player:Player.update(),
+		block:Block.update()
 	}
 	for(var i in SOCKET_LIST){ //Loop through all players
 		var socket = SOCKET_LIST[i];

@@ -12,6 +12,11 @@
 		ctx.clearRect(0,0,1200,675);
 		for(var i = 0; i < data.player.length; i++)
 			ctx.fillText(data.player[i].number,data.player[i].x,data.player[i].y);
+        }
+        for(var i = 0; i < data.block.length; i++){
+            ctx.fillRect(data.block[i].x1,data.block[i].y1,data.block[i].x2,data.block[i].y2,);
+            console.log(data.block[i].x1,data.block[i].y1,data.block[i].x2,data.block[i].y2,);
+        }
 	});
 
     socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
