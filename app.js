@@ -12,6 +12,18 @@ console.log('Server started.');
 
 var SOCKET_LIST = {};
 
+var polarize = function(x,y){
+	pheight = Math.sqrt(x*x+y*y);
+	pangle = atan2(y/x);
+	return (pheight,pangle)
+}
+
+var depolarize = function(pheight,pangle){
+	x = pheight*Math.cos(pangle);
+	y = pheight*Math.sin(pangle);
+	return (x,y)
+}
+
 var Entity = function(){
 	var self = {
 		fric:1, //how much friction affects movement
