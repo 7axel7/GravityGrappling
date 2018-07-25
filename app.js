@@ -27,8 +27,8 @@ var depolarize = function(pheight,pangle){
 var Entity = function(){
 	var self = {
 		fric:1, //how much friction affects movement
-		x:250,
-		y:250,
+		x:0,
+		y:0,
 		spdX:0,
 		spdY:0,
 		accX:0,
