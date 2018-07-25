@@ -138,7 +138,8 @@ Player.update = function(){
 		pack.push({
 			x:player.x,
 			y:player.y,
-			number:player.number
+			number:player.number,
+			pId:player.id
 		});
 	}
 	return pack;
@@ -211,7 +212,7 @@ setInterval(function(){
 	}
 	for(var i in SOCKET_LIST){ //Loop through all players
 		var socket = SOCKET_LIST[i];
-		socket.emit('newPositions',pack); 
+		socket.emit('newPositions',pack,i); 
 	}
 
 	
