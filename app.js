@@ -144,16 +144,32 @@ Player.update = function(){
 	}
 	return pack;
 }
-
-var Block = function(id){
+var Terrain = function(id){
 	var self = {
 		x1:0,
 		y1:0,
 		x2:0,
 		y2:0,
+		dir:0,
+		fric:0, //friction coefficient
+		type:0,
 		id:""
 	}
+	return self;
+}
+var Wall = function(id){
+	var self = Terrain();
 	self.id = id;
+	Wall.list[id] = self;
+	return self;
+}
+
+Wall.list = {};
+
+var Block = function(id){
+	var self = Terrain();
+	self.id = id;
+	self.type = 1;
 	Block.list[id] = self;
 	return self;
 }
@@ -165,7 +181,7 @@ Block.update = function(){
 
 	for(var i in Block.list){
 		var block = Block.list[i];
-		pack.push({
+		pack.push({ 
 			x1:block.x1,
 			y1:block.y1,
 			x2:block.x2,
@@ -176,11 +192,10 @@ Block.update = function(){
 }
 
 var blockTest = new Block(1);
-	blockTest.x1=100;
-	blockTest.y1=100;
-	blockTest.x2=300;
-	blockTest.y2=350;
-
+	blockTest.x1=-5;
+	blockTest.y1=-300;
+	blockTest.x2=10;
+	blockTest.y2=600;
 
 var io = require('socket.io')(serv,{});//listens when someone connects
 io.sockets.on('connection',function(socket){
