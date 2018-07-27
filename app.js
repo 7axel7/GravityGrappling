@@ -73,17 +73,17 @@ var Player = function(id){
     self.pressingDown = false;
     self.pressingLeftClick = false;
     self.mouseAngle = 0;
-    self.spdStat = 10;
+    self.spdLim = 10;
 
-    
     var super_update = self.update;
+
     self.update = function(){
     	self.updateSpd();
     	super_update();
     }
 
-    self.determineSpd = function(velocity,direction,spdStat){
-        var temp = direction*spdStat; // spdStat is speed limit
+    self.determineSpd = function(velocity,direction,spdLim){
+        var temp = direction*spdLim; // spdLim is speed limit
         var speed = 1*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
         // changing 1 to some other value will change how fast acceleration is.
         return speed;
@@ -91,11 +91,11 @@ var Player = function(id){
 
     self.updateSpd = function(){
         if(self.pressingRight){
-        	self.accX += self.determineSpd(self.spdX,1,self.spdStat)
+        	self.accX += self.determineSpd(self.spdX,1,self.spdLim)
         }
 
         if(self.pressingLeft){
-        	self.accX += self.determineSpd(self.spdX,-1,self.spdStat)
+        	self.accX += self.determineSpd(self.spdX,-1,self.spdLim)
 
         }
     
