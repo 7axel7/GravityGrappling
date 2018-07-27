@@ -125,11 +125,12 @@ Player.onConnect = function(socket){
         	player.mouseAngle = data.state;
     });
 }
+
 Player.onDisconnect = function(socket){
 	delete Player.list[socket.id];
 }
 
-Player.update = function(){
+Player.update = function(){ // packs player info every update
 	var pack = [];
 
 	for(var i in Player.list){
@@ -150,21 +151,33 @@ var Terrain = function(id){
 		y1:0,
 		x2:0,
 		y2:0,
-		dir:0,
 		fric:0, //friction coefficient
-		type:0,
+		type:0, // terrain type if we ever need it
 		id:""
 	}
 	return self;
 }
+
 var Wall = function(id){
 	var self = Terrain();
 	self.id = id;
+	self.ang = 0; //angle of the wall (rads)
+	self.norm = 0; //normal of the wall (THIS IS THE COLLIDABLE SIDE OF THE WALL)
+
 	Wall.list[id] = self;
 	return self;
 }
 
-Wall.list = {};
+Wall.list = {}; // init wall list
+
+Wall.init = function(id) { 
+//when making a wall use Wall.init to automatically set ang and norm using the points
+	Wall.list[id].ang = Math.atan2(
+		Wall.list[id].y2 - Wall.list[id].y1, 
+		Wall.list[id].x2 - Wall.list[id].x1
+	); //set dir
+	Wall.list[id].norm = Wall.list[id],dir + 90;
+}
 
 var Block = function(id){
 	var self = Terrain();
@@ -230,5 +243,4 @@ setInterval(function(){
 		socket.emit('newPositions',pack,i); 
 	}
 
-	
 },1000/25);
