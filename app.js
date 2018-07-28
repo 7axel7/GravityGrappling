@@ -14,16 +14,16 @@ var SOCKET_LIST = {};
 
 var polarize = function(x,y){
 	var pheight = Math.sqrt(x*x+y*y);
-	var pangle = atan2(y/x);
-	return [pheight,pangle]
+	var pangle = Math.atan2(y,x);
+	return [pheight,pangle];
 }
 
 var depolarize = function(pheight,pangle){
 	var x = pheight*Math.cos(pangle);
 	var y = pheight*Math.sin(pangle);
-	return [x,y]
+	return [Math.round(x*10)/10,Math.round(y*10)/10];
 }
-
+console.log(depolarize(3,Math.PI));
 var Entity = function(){
 	var self = {
 		fric:1, //how much friction affects movement
@@ -45,10 +45,13 @@ var Entity = function(){
 
 	self.applyGravity = function(){
 		var gravVector = [ //The vector that represents the direction and magnitude of the pull of gravity
-			depolarize(polarize(self.x,self.y)[0] -= self.grav, polarize(self.x,self.y)[1])[0] - self.x,
-			depolarize(polarize(self.x,self.y)[0] -= self.grav, polarize(self.x,self.y)[1])[1] - self.y,
+			depolarize(Math.max(polarize(self.x,self.y)[0] -= self.grav,0), polarize(self.x,self.y)[1])[0] - self.x,
+			depolarize(Math.max(polarize(self.x,self.y)[0] -= self.grav,0), polarize(self.x,self.y)[1])[1] - self.y
 		];
-
+		//console.log("coords:" + [self.x,self.y]);
+		//console.log("Polarized:" + polarize(self.x,self.y));
+		//console.log("Depolarized:" + depolarize(polarize(self.x,self.y)[0],polarize(self.x,self.y)[1]));
+		//console.log("GravVector:" + gravVector);
 		self.spdX += gravVector[0];
 		self.spdY += gravVector[1];
 	} //apply gravity to player's velocity
