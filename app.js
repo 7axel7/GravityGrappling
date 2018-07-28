@@ -37,9 +37,20 @@ var Entity = function(){
 		id:""
 	}
 	self.update = function(){
+		self.applyGrav();
+		self.applyCollision();
 		self.updatePosition();
-		self.spdY += self.grav
+
 	}
+
+	self.applyGrav = function(){
+		self.spdY += self.grav;
+	} //apply gravity to player's velocity
+
+	self.applyCollision = function(){
+
+	} //find applicable walls and applies collision
+
 	self.updatePosition = function(){
 		self.spdX += self.accX;
 		self.spdY += self.accY;
@@ -152,7 +163,7 @@ var Terrain = function(id){
 		x2:0,
 		y2:0,
 		fric:0, //friction coefficient
-		type:0, // terrain type if we ever need it
+		ttype:0, //terrain type if we ever need it
 		id:""
 	}
 	return self;
@@ -163,6 +174,7 @@ var Wall = function(id){
 	self.id = id;
 	self.ang = 0; //angle of the wall (rads)
 	self.norm = 0; //normal of the wall (ang +90 degrees)
+	self.fric = 1;
 	Wall.list[id] = self;
 	return self;
 }
@@ -181,7 +193,8 @@ Wall.init = function(id) {
 var Block = function(id){
 	var self = Terrain();
 	self.id = id;
-	self.type = 1;
+	self.ttype = 1;
+	self.fric = 1;
 	Block.list[id] = self;
 	return self;
 }
