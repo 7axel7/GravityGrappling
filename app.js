@@ -13,15 +13,15 @@ console.log('Server started.');
 var SOCKET_LIST = {};
 
 var polarize = function(x,y){
-	pheight = Math.sqrt(x*x+y*y);
-	pangle = atan2(y/x);
-	return (pheight,pangle)
+	var pheight = Math.sqrt(x*x+y*y);
+	var pangle = atan2(y/x);
+	return [pheight,pangle]
 }
 
 var depolarize = function(pheight,pangle){
-	x = pheight*Math.cos(pangle);
-	y = pheight*Math.sin(pangle);
-	return (x,y)
+	var x = pheight*Math.cos(pangle);
+	var y = pheight*Math.sin(pangle);
+	return [x,y]
 }
 
 var Entity = function(){
@@ -33,18 +33,24 @@ var Entity = function(){
 		spdY:0,
 		accX:0,
 		accY:0,
-		grav:0, //Personal gravity stat
+		grav:5, //Personal gravity stat
 		id:""
 	}
 	self.update = function(){
-		self.applyGrav();
+		self.applyGravity();
 		self.applyCollision();
 		self.updatePosition();
 
 	}
 
-	self.applyGrav = function(){
-		self.spdY += self.grav;
+	self.applyGravity = function(){
+		var gravVector = [ //The vector that represents the direction and magnitude of the pull of gravity
+			depolarize(polarize(self.x,self.y)[0] -= self.grav, polarize(self.x,self.y)[1])[0] - self.x,
+			depolarize(polarize(self.x,self.y)[0] -= self.grav, polarize(self.x,self.y)[1])[1] - self.y,
+		];
+
+		self.spdX += gravVector[0];
+		self.spdY += gravVector[1];
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
