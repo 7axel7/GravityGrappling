@@ -34,6 +34,8 @@ var Entity = function(){
 		accX:0,
 		accY:0,
 		grav:0, //Personal gravity stat
+		render:800, // Render Distance
+		rad:0, //hitbox radius
 		id:""
 	}
 	self.update = function(){
@@ -48,7 +50,31 @@ var Entity = function(){
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
+		//console.log("collision applied");
+		for(var i in Wall.list){
+			var wall = Wall.list[i];
+			if (Math.sqrt(Math.pow(Wall.list[i].midx - self.x, 2) + 
+				Math.pow(Wall.list[i].midy - self.y, 2))<= self.render){ //first stage detection
 
+				if (Math.min(Wall.list[i].x1, Wall.list[i].x2) - self.rad < self.x &&
+					Math.max(Wall.list[i].x1, Wall.list[i].x2) + self.rad > self.x &&
+					Math.min(Wall.list[i].y1, Wall.list[i].y2) - self.rad < self.y &&
+					Math.max(Wall.list[i].y1, Wall.list[i].y2) + self.rad > self.y){ //second stage detection
+					
+					var wa = Wall.list[i].y2 - Wall.list[i].y1;
+					var wb = -1 * (Wall.list[i].x2 - Wall.list[i].x1);
+					var wc = (Wall.list[i].x2 - Wall.list[i].x1) * Wall.list[i].y1 -
+							 (Wall.list[i].y2 - Wall.list[i].y1) * Wall.list[i].x1;
+					var wm = self.x + (wc + wb * self.y)/wa;
+					var wn = self.y + (wc + wa * self.x)/wb;
+					var dist = Math.abs((wm * wn) / Math.sqrt(Math.pow(wm, 2) + Math.pow(wn, 2)));
+
+					if(dist <= self.rad){
+						console.log("oooohh you touch my tralala");
+					}
+				}
+			}
+		}
 	} //find applicable walls and applies collision
 
 	self.updatePosition = function(){
@@ -85,6 +111,7 @@ var Player = function(id){
     self.pressingLeftClick = false;
     self.mouseAngle = 0;
     self.spdLim = 10;
+    self.rad = 5;
 
     var super_update = self.update;
 
@@ -172,23 +199,40 @@ var Terrain = function(id){
 var Wall = function(id){
 	var self = Terrain();
 	self.id = id;
-	self.ang = 0; //angle of the wall (rads)
-	self.norm = 0; //normal of the wall (ang +90 degrees)
 	self.fric = 1;
+	self.ang = Math.atan2(
+		self.y2 - self.y1, 
+		self.x2 - self.x1
+	); //set angle of the wall (rads)
+	self.norm = self.ang + (Math.PI/2);
+	self.midx = (self.x1 + self.x2)/2 //avg the coords for midpoint
+	self.midy = (self.y1 + self.y2)/2
 	Wall.list[id] = self;
 	return self;
 }
 
 Wall.list = {}; // init wall list
 
-Wall.init = function(id) { 
-//when making a wall use Wall.init to automatically set ang and norm using the points
-	Wall.list[id].ang = Math.atan2(
-		Wall.list[id].y2 - Wall.list[id].y1, 
-		Wall.list[id].x2 - Wall.list[id].x1
-	); //set dir
-	Wall.list[id].norm = Wall.list[id],dir + 90;
+Wall.update = function(){
+	var pack = [];
+
+	for(var i in Wall.list){
+		var wall = Wall.list[i];
+		pack.push({ 
+			x1:wall.x1,
+			y1:wall.y1,
+			x2:wall.x2,
+			y2:wall.y2,
+		});
+	}
+	return pack;
 }
+
+var wallTest = new Wall(1);
+wallTest.x1 = 100
+wallTest.y1 = 100
+wallTest.x2 = -100
+wallTest.y2 = -100
 
 var Block = function(id){
 	var self = Terrain();
@@ -248,7 +292,8 @@ io.sockets.on('connection',function(socket){
 setInterval(function(){
 	var pack = {
 		player:Player.update(),
-		block:Block.update()
+		block:Block.update(),
+		wall:Wall.update()
 	}
 	for(var i in SOCKET_LIST){ //Loop through all players
 		var socket = SOCKET_LIST[i];
