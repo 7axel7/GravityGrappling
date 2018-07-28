@@ -13,15 +13,15 @@ console.log('Server started.');
 var SOCKET_LIST = {};
 
 var polarize = function(x,y){
-	var pheight = Math.sqrt(x*x+y*y);
-	var pangle = Math.atan2(y,x);
-	return [pheight,pangle];
+	pheight = Math.sqrt(x*x+y*y);
+	pangle = atan2(y/x);
+	return (pheight,pangle)
 }
 
 var depolarize = function(pheight,pangle){
-	var x = pheight*Math.cos(pangle);
-	var y = pheight*Math.sin(pangle);
-	return [Math.round(x*10)/10,Math.round(y*10)/10];
+	x = pheight*Math.cos(pangle);
+	y = pheight*Math.sin(pangle);
+	return (x,y)
 }
 
 var Entity = function(){
@@ -33,27 +33,18 @@ var Entity = function(){
 		spdY:0,
 		accX:0,
 		accY:0,
-		grav:5, //Personal gravity stat
+		grav:0, //Personal gravity stat
 		id:""
 	}
 	self.update = function(){
-		self.applyGravity();
+		self.applyGrav();
 		self.applyCollision();
 		self.updatePosition();
 
 	}
 
-	self.applyGravity = function(){
-		var gravVector = [ //The vector that represents the direction and magnitude of the pull of gravity
-			depolarize(Math.max(polarize(self.x,self.y)[0] -= self.grav,0), polarize(self.x,self.y)[1])[0] - self.x,
-			depolarize(Math.max(polarize(self.x,self.y)[0] -= self.grav,0), polarize(self.x,self.y)[1])[1] - self.y
-		];
-		//console.log("coords:" + [self.x,self.y]);
-		//console.log("Polarized:" + polarize(self.x,self.y));
-		//console.log("Depolarized:" + depolarize(polarize(self.x,self.y)[0],polarize(self.x,self.y)[1]));
-		//console.log("GravVector:" + gravVector);
-		self.spdX += gravVector[0];
-		self.spdY += gravVector[1];
+	self.applyGrav = function(){
+		self.spdY += self.grav;
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
@@ -119,16 +110,6 @@ var Player = function(id){
 
         }
     
-    	if(self.pressingDown){
-        	self.accY += self.determineSpd(self.spdY,1,self.spdLim)
-
-        }
-
-
-        if(self.pressingUp){
-        	self.accY += self.determineSpd(self.spdY,-1,self.spdLim)
-
-        }
     }
     Player.list[id] = self;
     return self;
