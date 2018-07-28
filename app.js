@@ -162,8 +162,7 @@ var Wall = function(id){
 	var self = Terrain();
 	self.id = id;
 	self.ang = 0; //angle of the wall (rads)
-	self.norm = 0; //normal of the wall (THIS IS THE COLLIDABLE SIDE OF THE WALL)
-
+	self.norm = 0; //normal of the wall (ang +90 degrees)
 	Wall.list[id] = self;
 	return self;
 }
