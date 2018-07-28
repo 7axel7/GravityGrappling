@@ -39,6 +39,7 @@ var Entity = function(){
 		id:""
 	}
 	self.update = function(){
+		self.applyGravity();
 		self.applyCollision();
 		self.updatePosition();
 
