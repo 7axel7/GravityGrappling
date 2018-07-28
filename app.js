@@ -23,7 +23,7 @@ var depolarize = function(pheight,pangle){
 	var y = pheight*Math.sin(pangle);
 	return [Math.round(x*10)/10,Math.round(y*10)/10];
 }
-console.log(depolarize(3,Math.PI));
+
 var Entity = function(){
 	var self = {
 		fric:1, //how much friction affects movement
@@ -119,6 +119,16 @@ var Player = function(id){
 
         }
     
+    	if(self.pressingDown){
+        	self.accY += self.determineSpd(self.spdY,1,self.spdLim)
+
+        }
+
+
+        if(self.pressingUp){
+        	self.accY += self.determineSpd(self.spdY,-1,self.spdLim)
+
+        }
     }
     Player.list[id] = self;
     return self;
