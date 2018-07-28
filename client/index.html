@@ -12,14 +12,14 @@
 		ctx.clearRect(0,0,1200,675);
         var clientNo = 0 // which player is the user
 
-        for(var i = 0; i < data.player.length; i++){
+        for(var i = 0; i < data.player.length; i++){ 
             //console.log(data.player[i].number, clientId);
             if (data.player[i].pId == clientId){
                 clientNo = i;
             } //find clientNo
         }
 
-		for(var i = 0; i < data.player.length; i++){
+		for(var i = 0; i < data.player.length; i++){ //player draw loop
             if (data.player[i].pId == clientId){
                 ctx.fillText(data.player[i].number,1200/2,675/2);
             } //if data.player[i] is the client, draw them in the center
@@ -33,7 +33,8 @@
                     );
             }
         };
-        for(var i = 0; i < data.block.length; i++){
+
+        for(var i = 0; i < data.block.length; i++){ //block draw loop
             /*console.log(
                 data.block[i].x1 - data.player[clientNo].x,
                 data.block[i].y1 - data.player[clientNo].y,
@@ -41,12 +42,26 @@
                 data.block[i].y2
                 );*/
             ctx.fillRect(
-                data.block[i].x1 - data.player[clientNo].x + 1200/2, //moves all blocks according to client's pos
+                data.block[i].x1 - data.player[clientNo].x + 1200/2, 
+                //moves all blocks according to client's pos
                 data.block[i].y1 - data.player[clientNo].y + 675/2,
                 data.block[i].x2,
                 data.block[i].y2
                 );
         };
+
+        for(var i = 0; i < data.wall.length; i++){ //wall draw loop
+            ctx.beginPath();
+            ctx.moveTo(
+                data.wall[i].x1 - data.player[clientNo].x + 1200/2,
+                data.wall[i].y1 - data.player[clientNo].y + 675/2);
+                //console.log(data.wall[i].x1, data.wall[i].y1);
+            ctx.lineTo(
+                data.wall[i].x2 - data.player[clientNo].x + 1200/2,
+                data.wall[i].y2 - data.player[clientNo].y + 675/2);
+                //console.log(data.wall[i].x2, data.wall[i].x2);
+            ctx.stroke();
+        }
 	});
 
     //socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
