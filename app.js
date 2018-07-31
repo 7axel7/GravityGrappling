@@ -31,26 +31,18 @@ var Entity = function(){
 		y:0,
 		spdX:0,
 		spdY:0,
-		accX:0,
-		accY:0,
-		grav:-5, //Personal gravity stat
+		grav:1.2, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
-		id:"",
-		collV:[] //collision vector
+		touching: [], //list of everything it's touching
+		id:""
 	}
+
 	self.update = function(){
 		self.applyGravity();
-		self.applyAcc();
-		self.applyCollision();
 		self.updatePosition();
+		self.applyCollision();
 
-	}
-	self.applyAcc = function(){
-		self.spdX += self.accX;
-		self.spdY += self.accY;
-		self.accX = 0;
-		self.accY = 0;
 	}
 
 	self.applyGravity = function(){
@@ -67,65 +59,76 @@ var Entity = function(){
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
+		//console.log(self.x,self.y)
 		for(var i in Wall.list){
-			var wall = Wall.list[i];
+			var wall = Wall.list[i]; //loop through all walls
 			if (Math.sqrt(Math.pow(wall.midx - self.x, 2) + 
-				Math.pow(wall.midy - self.y, 2))<= self.render){ //first stage detection
+				Math.pow(wall.midy - self.y, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
 				if (Math.min(wall.x1, wall.x2) - self.rad < self.x &&
 					Math.max(wall.x1, wall.x2) + self.rad > self.x &&
 					Math.min(wall.y1, wall.y2) - self.rad < self.y &&
-					Math.max(wall.y1, wall.y2) + self.rad > self.y){ //second stage detection
-					if (wall.x1 == wall.x2){
+					Math.max(wall.y1, wall.y2) + self.rad > self.y){ //second stage detection (minimum bounding box + player's radius)
+					if (wall.x1 == wall.x2){ //vertical wall special case
 							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
-							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
+							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag 
 							var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
-							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta, with extra to puch you to the surface
-							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2));
-							var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.x) - Math.abs(wall.x1)), (wAng + Math.PI/2));
+							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
+							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2)); //counteract the normal force
+							var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.x) - Math.abs(wall.x1)), (wAng + Math.PI/2)); //plus extra to push you out of the wall
 							self.x += bumpOut[0];
 							self.y += bumpOut[1];
 							self.spdX += bumpSpd[0];
 							self.spdY += bumpSpd[1];	
-							self.collV = bumpSpd;
-							console.log(bumpOut,Math.abs(Math.abs(self.x) - Math.abs(wall.x1)));
+							self.touching[i] = wall;
+							console.log(bumpOut);
 					}
-					else if(wall.y1 == wall.y2){
+					else if(wall.y1 == wall.y2){ // horizontal wall special case
 							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
 							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
 							var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
-							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta, with extra to puch you to the surface
-							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2));
-							var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.y) - Math.abs(wall.y1)), (wAng + Math.PI/2));
+							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
+							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2)); //counteract the normal force
+							var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.y) - Math.abs(wall.y1)), (wAng + Math.PI/2)); //plus extra to push you out of the wall
 							self.x += bumpOut[0];
 							self.y += bumpOut[1];
 							self.spdX += bumpSpd[0];
 							self.spdY += bumpSpd[1];	
-							self.collV = bumpSpd;
-							console.log(bumpOut,self.y);
+							self.touching[i] = wall;
+							console.log(bumpOut);
 					}
-					else{
+					else{ //all other walls; have to do more math to detect collision
 						var wa = wall.y2 - wall.y1;
 						var wb = -1 * (wall.x2 - wall.x1);
 						var wc = (wall.x2 - wall.x1) * wall.y1 -
-							 (wall.y2 - wall.y1) * wall.x1;
+							 (wall.y2 - wall.y1) * wall.x1; //find A,B,C in line's standard form equation
 						var wm = self.x + self.spdX + (wc + wb * self.y)/wa;
-						var wn = self.y + self.spdY + (wc + wa * self.x)/wb;
-						var dist = Math.abs((wm * wn) / Math.sqrt(Math.pow(wm, 2) + Math.pow(wn, 2)));
+						var wn = self.y + self.spdY + (wc + wa * self.x)/wb; //do some math magic relating to player's position
+						var dist = Math.abs((wm * wn) / Math.sqrt(Math.pow(wm, 2) + Math.pow(wn, 2))); 
+						//find distance from player's center to the closest point on the line
 						if(dist <= self.rad){
 							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
 							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
 							var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
-							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta, with extra to puch you to the surface
-							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2));
-							var bumpOut = depolarize(self.rad - dist, (wAng + Math.PI/2));
+							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
+							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2)); //counteract the normal force
+							var bumpOut = depolarize(self.rad - dist, (wAng + Math.PI/2)); //plus extra to push you out of the wall
 							self.x += bumpOut[0];
 							self.y += bumpOut[1];	
 							self.spdX += bumpSpd[0];
 							self.spdY += bumpSpd[1];	
-							self.collV = bumpSpd;
+							self.touching[i] = wall;
+						}
+						else{
+						self.touching.splice(i); //If the wall fails any of the tests, it's removed from self.touching
 						}	
 					}
 				}
+				else{
+				self.touching.splice(i);
+				}
+			}
+			else{
+				self.touching.splice(i);
 			}
 		}
 	} //find applicable walls and applies collision
@@ -183,29 +186,29 @@ var Player = function(id){
 
     self.determineSpd = function(velocity,direction,spdLim){
         var temp = direction*spdLim; // spdLim is speed limit
-        var speed = 0.25*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
+        var speed = 0.5*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
         // changing 1 to some other value will change how fast acceleration is.
         return speed;
     }
 
     self.updateSpd = function(){
         if(self.pressingRight){
-        	self.accX += self.determineSpd(self.spdX,1,self.spdLim)
+        	self.spdX += self.determineSpd(self.spdX,1,self.spdLim)
         }
 
         if(self.pressingLeft){
-        	self.accX += self.determineSpd(self.spdX,-1,self.spdLim)
+        	self.spdX += self.determineSpd(self.spdX,-1,self.spdLim)
 
         }
     
     	if(self.pressingDown){
-        	self.accY += self.determineSpd(self.spdY,1,self.spdLim)
+        	self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
 
         }
 
 
         if(self.pressingUp){
-        	self.accY += self.determineSpd(self.spdY,-1,self.spdLim)
+        	self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
 
         }
     }
@@ -252,7 +255,6 @@ Player.update = function(){ // packs player info every update
 			pId:player.id,
 			spdX:player.spdX,
 			spdY:player.spdY,
-			collV:player.collV
 		});
 	}
 	return pack;
