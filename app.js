@@ -33,16 +33,24 @@ var Entity = function(){
 		spdY:0,
 		accX:0,
 		accY:0,
-		grav:5, //Personal gravity stat
+		grav:-5, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
-		id:""
+		id:"",
+		collV:[] //collision vector
 	}
 	self.update = function(){
 		self.applyGravity();
+		self.applyAcc();
 		self.applyCollision();
 		self.updatePosition();
 
+	}
+	self.applyAcc = function(){
+		self.spdX += self.accX;
+		self.spdY += self.accY;
+		self.accX = 0;
+		self.accY = 0;
 	}
 
 	self.applyGravity = function(){
@@ -59,27 +67,63 @@ var Entity = function(){
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
-		//console.log("collision applied");
 		for(var i in Wall.list){
 			var wall = Wall.list[i];
-			if (Math.sqrt(Math.pow(Wall.list[i].midx - self.x, 2) + 
-				Math.pow(Wall.list[i].midy - self.y, 2))<= self.render){ //first stage detection
-
-				if (Math.min(Wall.list[i].x1, Wall.list[i].x2) - self.rad < self.x &&
-					Math.max(Wall.list[i].x1, Wall.list[i].x2) + self.rad > self.x &&
-					Math.min(Wall.list[i].y1, Wall.list[i].y2) - self.rad < self.y &&
-					Math.max(Wall.list[i].y1, Wall.list[i].y2) + self.rad > self.y){ //second stage detection
-					
-					var wa = Wall.list[i].y2 - Wall.list[i].y1;
-					var wb = -1 * (Wall.list[i].x2 - Wall.list[i].x1);
-					var wc = (Wall.list[i].x2 - Wall.list[i].x1) * Wall.list[i].y1 -
-							 (Wall.list[i].y2 - Wall.list[i].y1) * Wall.list[i].x1;
-					var wm = self.x + (wc + wb * self.y)/wa;
-					var wn = self.y + (wc + wa * self.x)/wb;
-					var dist = Math.abs((wm * wn) / Math.sqrt(Math.pow(wm, 2) + Math.pow(wn, 2)));
-
-					if(dist <= self.rad){
-						console.log("oooohh you touch my tralala");
+			if (Math.sqrt(Math.pow(wall.midx - self.x, 2) + 
+				Math.pow(wall.midy - self.y, 2))<= self.render){ //first stage detection
+				if (Math.min(wall.x1, wall.x2) - self.rad < self.x &&
+					Math.max(wall.x1, wall.x2) + self.rad > self.x &&
+					Math.min(wall.y1, wall.y2) - self.rad < self.y &&
+					Math.max(wall.y1, wall.y2) + self.rad > self.y){ //second stage detection
+					if (wall.x1 == wall.x2){
+							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
+							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
+							var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
+							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta, with extra to puch you to the surface
+							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2));
+							var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.x) - Math.abs(wall.x1)), (wAng + Math.PI/2));
+							self.x += bumpOut[0];
+							self.y += bumpOut[1];
+							self.spdX += bumpSpd[0];
+							self.spdY += bumpSpd[1];	
+							self.collV = bumpSpd;
+							console.log(bumpOut,Math.abs(Math.abs(self.x) - Math.abs(wall.x1)));
+					}
+					else if(wall.y1 == wall.y2){
+							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
+							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
+							var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
+							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta, with extra to puch you to the surface
+							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2));
+							var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.y) - Math.abs(wall.y1)), (wAng + Math.PI/2));
+							self.x += bumpOut[0];
+							self.y += bumpOut[1];
+							self.spdX += bumpSpd[0];
+							self.spdY += bumpSpd[1];	
+							self.collV = bumpSpd;
+							console.log(bumpOut,self.y);
+					}
+					else{
+						var wa = wall.y2 - wall.y1;
+						var wb = -1 * (wall.x2 - wall.x1);
+						var wc = (wall.x2 - wall.x1) * wall.y1 -
+							 (wall.y2 - wall.y1) * wall.x1;
+						var wm = self.x + self.spdX + (wc + wb * self.y)/wa;
+						var wn = self.y + self.spdY + (wc + wa * self.x)/wb;
+						var dist = Math.abs((wm * wn) / Math.sqrt(Math.pow(wm, 2) + Math.pow(wn, 2)));
+						if(dist <= self.rad){
+							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
+							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
+							var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
+							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta, with extra to puch you to the surface
+							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2));
+							var bumpOut = depolarize(self.rad - dist, (wAng + Math.PI/2));
+							self.x += bumpOut[0];
+							self.y += bumpOut[1];	
+							self.spdX += bumpSpd[0];
+							self.spdY += bumpSpd[1];	
+							self.collV = bumpSpd;
+						}	
 					}
 				}
 			}
@@ -87,12 +131,9 @@ var Entity = function(){
 	} //find applicable walls and applies collision
 
 	self.updatePosition = function(){
-		self.spdX += self.accX;
-		self.spdY += self.accY;
 		self.x += self.spdX;
 		self.y += self.spdY;
-		self.accX = 0;
-		self.accY = 0;
+
 		var friction = self.fric;
 		if (self.spdX < 0){
 			friction = -1*friction;
@@ -102,7 +143,17 @@ var Entity = function(){
 		} else {
 			self.spdX = 0; // friction completely stops object
 		}
+		var friction = self.fric;
+		if (self.spdY < 0){
+			friction = -1*friction;
+		}
+		if (Math.abs(friction) < Math.abs(self.spdY)){ // friction doesnt completely stop object
+			self.spdY -= friction;
+		} else {
+			self.spdY = 0; // friction completely stops object
+		}
 	}
+
 	self.getDistance = function(pt){
 		return Math.sqrt(Math.pow(self.x-pt.x,2) + Math.pow(self.y-pt.y,2));
 	}
@@ -119,8 +170,9 @@ var Player = function(id){
     self.pressingDown = false;
     self.pressingLeftClick = false;
     self.mouseAngle = 0;
-    self.spdLim = 10;
-    self.rad = 5;
+    self.spdLim = 6;
+    self.y = 1;
+    self.rad = 10;
 
     var super_update = self.update;
 
@@ -131,7 +183,7 @@ var Player = function(id){
 
     self.determineSpd = function(velocity,direction,spdLim){
         var temp = direction*spdLim; // spdLim is speed limit
-        var speed = 1*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
+        var speed = 0.25*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
         // changing 1 to some other value will change how fast acceleration is.
         return speed;
     }
@@ -197,7 +249,10 @@ Player.update = function(){ // packs player info every update
 			x:player.x,
 			y:player.y,
 			number:player.number,
-			pId:player.id
+			pId:player.id,
+			spdX:player.spdX,
+			spdY:player.spdY,
+			collV:player.collV
 		});
 	}
 	return pack;
@@ -208,7 +263,6 @@ var Terrain = function(id){
 		y1:0,
 		x2:0,
 		y2:0,
-		fric:0, //friction coefficient
 		ttype:0, //terrain type if we ever need it
 		id:""
 	}
@@ -218,12 +272,6 @@ var Terrain = function(id){
 var Wall = function(id){
 	var self = Terrain();
 	self.id = id;
-	self.fric = 1;
-	self.ang = Math.atan2(
-		self.y2 - self.y1, 
-		self.x2 - self.x1
-	); //set angle of the wall (rads)
-	self.norm = self.ang + (Math.PI/2);
 	self.midx = (self.x1 + self.x2)/2 //avg the coords for midpoint
 	self.midy = (self.y1 + self.y2)/2
 	Wall.list[id] = self;
@@ -248,10 +296,22 @@ Wall.update = function(){
 }
 
 var wallTest = new Wall(1);
-wallTest.x1 = 100
+wallTest.x1 = 150
 wallTest.y1 = 100
-wallTest.x2 = -100
-wallTest.y2 = -100
+wallTest.x2 = -150
+wallTest.y2 = 100
+
+var wallTesty = new Wall(2);
+wallTesty.x1 = 300
+wallTesty.y1 = -50
+wallTesty.x2 = 150
+wallTesty.y2 = 100
+
+var wallTesto = new Wall(3);
+wallTesto.x1 = 300
+wallTesto.y1 = -350
+wallTesto.x2 = 300
+wallTesto.y2 = -50
 
 var Block = function(id){
 	var self = Terrain();
@@ -280,7 +340,7 @@ Block.update = function(){
 }
 
 var blockTest = new Block(1);
-	blockTest.x1=-5;
+	blockTest.x1=-100;
 	blockTest.y1=-300;
 	blockTest.x2=10;
 	blockTest.y2=600;
@@ -309,6 +369,7 @@ io.sockets.on('connection',function(socket){
 });
 
 setInterval(function(){
+
 	var pack = {
 		player:Player.update(),
 		block:Block.update(),
@@ -319,4 +380,4 @@ setInterval(function(){
 		socket.emit('newPositions',pack,i); 
 	}
 
-},1000/25);
+},1000/120);

@@ -9,7 +9,7 @@
 	var ctx = c.getContext("2d");
 
 	socket.on('newPositions',function(data, clientId){ //listens for newPositions
-		ctx.clearRect(0,0,1200,675);
+        ctx.clearRect(0,0,1200,675);
         var clientNo = 0 // which player is the user
 
         for(var i = 0; i < data.player.length; i++){ 
@@ -22,6 +22,19 @@
 		for(var i = 0; i < data.player.length; i++){ //player draw loop
             if (data.player[i].pId == clientId){
                 ctx.fillText(data.player[i].number,1200/2,675/2);
+                ctx.beginPath();
+                ctx.arc(1200/2,675/2,10, 0, Math.PI*2);
+                ctx.stroke();
+                ctx.strokeStyle = "#55CCFF";
+                ctx.beginPath();
+                ctx.moveTo(1200/2,675/2);
+                ctx.lineTo(1200/2 + data.player[i].spdX, 675/2 + data.player[i].spdY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(1200/2,675/2);
+                ctx.lineTo(1200/2 + data.player[i].collV[0], 675/2 + data.player[i].collV[1]);
+                ctx.stroke();
+                ctx.strokeStyle = "#000000"
             } //if data.player[i] is the client, draw them in the center
             else {
                 //console.log(data.player[i].number,data.player[i].x,data.player[i].y);
@@ -31,6 +44,11 @@
                     //draw everyone else based on the client's pos
                     data.player[i].y - data.player[clientNo].y + 675/2
                     );
+                ctx.beginPath();
+                ctx.arc(data.player[i].x - data.player[clientNo].x + 1200/2,
+                    data.player[i].y - data.player[clientNo].y + 675/2,
+                    10, 0, Math.PI*2);
+                ctx.stroke();
             }
         };
 
