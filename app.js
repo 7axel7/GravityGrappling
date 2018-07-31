@@ -46,9 +46,12 @@ var Entity = function(){
 	}
 
 	self.applyGravity = function(){
+		var polar = polarize(self.x,self.y); //get polar coords of player (pheight, pangle)
+		var phSan = Math.max(polar[0] - self.grav, 0); //sanitize pHeight (if it's lower than self.grav, take 0), as well as decrease magnitude by self.grav
+		var newDir = depolarize(phSan, polar[1]); //depolarize to obtain goal direction
 		var gravVector = [ //The vector that represents the direction and magnitude of the pull of gravity
-			depolarize(Math.max(polarize(self.x,self.y)[0] -= self.grav,0), polarize(self.x,self.y)[1])[0] - self.x,
-			depolarize(Math.max(polarize(self.x,self.y)[0] -= self.grav,0), polarize(self.x,self.y)[1])[1] - self.y
+			newDir[0] - self.x, //subtract self.x from newDir to get gravity vector
+			newDir[1] - self.y
 		];
 		//console.log("coords:" + [self.x,self.y]);
 		//console.log("Polarized:" + polarize(self.x,self.y));
