@@ -140,22 +140,18 @@ var Entity = function(){
 		self.x += self.spdX;
 		self.y += self.spdY;
 
+		var mom = polarize(self.spdX, self.spdY); //get polar vector for momentum
+		var ur = [];
+
 		var friction = self.fric;
-		if (self.spdX < 0){
-			friction = -1*friction;
-		}
-		if (Math.abs(friction) < Math.abs(self.spdX)){ // friction doesnt completely stop object
-			self.spdX -= friction;
+
+		if (friction < mom[0]){ // friction doesnt completely stop object
+			mom[0] -= friction;
+			ur = depolarize(mom[0], mom[1]);
+			self.spdX = ur[0];
+			self.spdY = ur[1];
 		} else {
-			self.spdX = 0; // friction completely stops object
-		}
-		var friction = self.fric;
-		if (self.spdY < 0){
-			friction = -1*friction;
-		}
-		if (Math.abs(friction) < Math.abs(self.spdY)){ // friction doesnt completely stop object
-			self.spdY -= friction;
-		} else {
+			self.spdX = 0;
 			self.spdY = 0; // friction completely stops object
 		}
 	}
@@ -201,18 +197,15 @@ var Player = function(id){
 
         if(self.pressingLeft){
         	self.spdX += self.determineSpd(self.spdX,-1,self.spdLim)
-
         }
     
     	if(self.pressingDown){
         	self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
-
         }
 
 
         if(self.pressingUp){
         	self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
-
         }
     }
     Player.list[id] = self;
