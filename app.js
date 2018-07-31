@@ -364,13 +364,6 @@ io.sockets.on('connection',function(socket){
 		Player.onDisconnect(socket);
 	});
 
-	//socket.on('happy',function(data){ //listens for message happy
-	//	console.log('happy because' + data.reason);
-	//});
-
-	//socket.emit('serverMsg',{
-	//	msg:'hello',
-	//});
 });
 
 setInterval(function(){
