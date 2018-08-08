@@ -170,6 +170,7 @@ var Player = function(id){
     self.pressingLeft = false;
     self.pressingUp = false;
     self.pressingDown = false;
+    self.pressingSpace = false;
     self.pressingLeftClick = false;
     self.mouseAngle = 0;
     self.spdLim = 6;
@@ -227,6 +228,8 @@ Player.onConnect = function(socket){
             player.pressingUp = data.state;
         else if(data.inputId === 'down')
             player.pressingDown = data.state;
+        else if(data.inputId === 'space')
+            player.pressingSpace = data.state;
         else if(data.inputId === 'lClick')
         	player.pressingLeftClick = data.state;
         else if(data.inputId === 'mouseAngle')
