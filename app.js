@@ -31,7 +31,7 @@ var Entity = function(){
 		y:0,
 		spdX:0,
 		spdY:0,
-		grav:1.2, //Personal gravity stat
+		grav:-1, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
 		touching: [], //list of everything it's touching
@@ -176,6 +176,7 @@ var Player = function(id){
     self.spdLim = 6;
     self.y = 1;
     self.rad = 10;
+    self.jumpheight = 25;
 
     var super_update = self.update;
 
@@ -204,9 +205,21 @@ var Player = function(id){
         	self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
         }
 
-
         if(self.pressingUp){
         	self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
+        }
+
+        if(self.pressingSpace){
+        	if (self.touching != []){
+        		for (var i in self.touching){
+        			var wall = self.touching[i];
+        			var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
+        			var jump = [];
+        			jump = depolarize(self.jumpheight, wAng + Math.PI/2);
+        			self.spdX += jump[0];
+					self.spdY += jump[1];
+        		}
+        	}
         }
     }
     Player.list[id] = self;
@@ -339,12 +352,6 @@ Block.update = function(){
 	}
 	return pack;
 }
-
-var blockTest = new Block(1);
-	blockTest.x1=-100;
-	blockTest.y1=-300;
-	blockTest.x2=10;
-	blockTest.y2=600;
 
 var io = require('socket.io')(serv,{});//listens when someone connects
 io.sockets.on('connection',function(socket){
