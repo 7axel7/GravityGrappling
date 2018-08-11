@@ -26,12 +26,12 @@ var depolarize = function(pheight,pangle){
 
 var Entity = function(){
 	var self = {
-		fric:5, //how much friction affects movement
+		fric:10, //how much friction affects movement
 		x:0,
 		y:0,
 		spdX:0,
 		spdY:0,
-		grav:-1/5, //Personal gravity stat
+		grav:-1/2, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
 		touching: [], //list of everything it's touching
