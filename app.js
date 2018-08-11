@@ -26,12 +26,12 @@ var depolarize = function(pheight,pangle){
 
 var Entity = function(){
 	var self = {
-		fric:1, //how much friction affects movement
+		fric:5, //how much friction affects movement
 		x:0,
 		y:0,
 		spdX:0,
 		spdY:0,
-		grav:-1, //Personal gravity stat
+		grav:-1/5, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
 		touching: [], //list of everything it's touching
@@ -63,6 +63,7 @@ var Entity = function(){
 
 	self.applyCollision = function(){
 		//console.log(self.x,self.y)
+		self.touching = [];
 		for(var i in Wall.list){
 			var wall = Wall.list[i]; //loop through all walls
 			if (Math.sqrt(Math.pow(wall.midx - self.x, 2) + 
@@ -83,7 +84,7 @@ var Entity = function(){
 							self.spdX += bumpSpd[0];
 							self.spdY += bumpSpd[1];	
 							self.touching[i] = wall;
-							console.log(bumpOut);
+							//console.log(bumpOut);
 					}
 					else if(wall.y1 == wall.y2){ // horizontal wall special case
 							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
@@ -97,7 +98,7 @@ var Entity = function(){
 							self.spdX += bumpSpd[0];
 							self.spdY += bumpSpd[1];	
 							self.touching[i] = wall;
-							console.log(bumpOut);
+							//console.log(bumpOut);
 					}
 					else{ //all other walls; have to do more math to detect collision
 						var wa = wall.y2 - wall.y1;
@@ -119,40 +120,39 @@ var Entity = function(){
 							self.y += bumpOut[1];	
 							self.spdX += bumpSpd[0];
 							self.spdY += bumpSpd[1];	
-							self.touching[i] = wall;
+							self.touching.push(wall);
 						}
-						else{
-						self.touching.splice(i); //If the wall fails any of the tests, it's removed from self.touching
-						}	
 					}
 				}
-				else{
-				self.touching.splice(i);
-				}
-			}
-			else{
-				self.touching.splice(i);
 			}
 		}
+	console.log(self.touching);
 	} //find applicable walls and applies collision
 
 	self.updatePosition = function(){
 		self.x += self.spdX;
 		self.y += self.spdY;
 
-		var mom = polarize(self.spdX, self.spdY); //get polar vector for momentum
-		var ur = [];
-
-		var friction = self.fric;
-
-		if (friction < mom[0]){ // friction doesnt completely stop object
-			mom[0] -= friction;
-			ur = depolarize(mom[0], mom[1]);
-			self.spdX = ur[0];
-			self.spdY = ur[1];
-		} else {
-			self.spdX = 0;
-			self.spdY = 0; // friction completely stops object
+		
+		if (self.touching.length >= 1){
+			for (var i in self.touching){
+				var wall = self.touching[i];
+				var mom = polarize(self.spdX, self.spdY); //get polar vector for momentum
+				var ur = [];
+				var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
+				var angDiff = Math.abs(mom[1] - (wAng + Math.PI/2)); //take theta
+				var normalForce = mom[0]*Math.cos(angDiff) ;
+				var friction = self.fric+normalForce;
+				if (friction < mom[0]){ // friction doesnt completely stop object
+					mom[0] -= friction;
+					ur = depolarize(mom[0], mom[1]);
+					self.spdX = ur[0];
+					self.spdY = ur[1];
+				} else {
+					self.spdX = 0;
+					self.spdY = 0; // friction completely stops object
+				}
+			}
 		}
 	}
 
@@ -194,28 +194,36 @@ var Player = function(id){
 
     self.updateSpd = function(){
         if(self.pressingRight){
-        	self.spdX += self.determineSpd(self.spdX,1,self.spdLim)
+        	if (self.touching.length >= 1){
+        		self.spdX += self.determineSpd(self.spdX,1,self.spdLim)
+        	}
         }
 
         if(self.pressingLeft){
-        	self.spdX += self.determineSpd(self.spdX,-1,self.spdLim)
+        	if (self.touching.length >= 1){	
+        		self.spdX += self.determineSpd(self.spdX,-1,self.spdLim)
+        	}
         }
     
     	if(self.pressingDown){
-        	self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
+        	if (self.touching.length >= 1){
+        		self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
+        	}
         }
 
         if(self.pressingUp){
-        	self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
+        	if (self.touching.length >= 1){
+        		self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
+        	}
         }
 
         if(self.pressingSpace){
-        	if (self.touching != []){
+        	if (self.touching.length >= 1){ // if player is touching a wall
         		for (var i in self.touching){
         			var wall = self.touching[i];
-        			var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
+        			var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1); //find out wall's normal
         			var jump = [];
-        			jump = depolarize(self.jumpheight, wAng + Math.PI/2);
+        			jump = depolarize(self.jumpheight, wAng + Math.PI/2); //jump according to normal
         			self.spdX += jump[0];
 					self.spdY += jump[1];
         		}
