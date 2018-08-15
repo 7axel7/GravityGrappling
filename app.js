@@ -51,7 +51,7 @@ var Entity = function(){
 		var gravVector = depolarize(self.grav, Grangle);
 		self.spdX += gravVector[0];
 		self.spdY += gravVector[1];
-		console.log(gravVector,self.spdX, self.spdY);
+		//console.log(gravVector,self.spdX, self.spdY);
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
@@ -148,11 +148,6 @@ var Entity = function(){
 			}
 		}
 	}
-
-	self.getDistance = function(pt){
-		return Math.sqrt(Math.pow(self.x-pt.x,2) + Math.pow(self.y-pt.y,2));
-	}
-	return self;
 }
 
 var Player = function(id){
