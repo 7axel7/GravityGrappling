@@ -26,12 +26,12 @@ var depolarize = function(pheight,pangle){
 
 var Entity = function(){
 	var self = {
-		fric:10, //how much friction affects movement
+		fric:7, //how much friction affects movement
 		x:0,
 		y:0,
 		spdX:0,
 		spdY:0,
-		grav:-1/2, //Personal gravity stat
+		grav:-1/10, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
 		touching: [], //list of everything it's touching
@@ -176,7 +176,7 @@ var Player = function(id){
     self.spdLim = 6;
     self.y = 1;
     self.rad = 10;
-    self.jumpheight = 25;
+    self.jumpheight = 100;
 
     var super_update = self.update;
 
@@ -223,7 +223,7 @@ var Player = function(id){
         			var wall = self.touching[i];
         			var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1); //find out wall's normal
         			var jump = [];
-        			jump = depolarize(self.jumpheight, wAng + Math.PI/2); //jump according to normal
+        			jump = depolarize(self.jumpheight/self.touching.length, wAng + Math.PI/2); //jump according to normal
         			self.spdX += jump[0];
 					self.spdY += jump[1];
         		}
