@@ -55,14 +55,14 @@
                 data.block[i].x2,
                 data.block[i].y2
                 );*/
-            ctx.fillRect(
-                data.block[i].x1 - data.player[clientNo].x + 1200/2, 
+                ctx.fillRect(
+                    data.block[i].x1 - data.player[clientNo].x + 1200/2, 
                 //moves all blocks according to client's pos
                 data.block[i].y1 - data.player[clientNo].y + 675/2,
                 data.block[i].x2,
                 data.block[i].y2
                 );
-        };
+            };
 
         for(var i = 0; i < data.wall.length; i++){ //wall draw loop
             ctx.beginPath();
@@ -70,13 +70,13 @@
                 data.wall[i].x1 - data.player[clientNo].x + 1200/2,
                 data.wall[i].y1 - data.player[clientNo].y + 675/2);
                 //console.log(data.wall[i].x1, data.wall[i].y1);
-            ctx.lineTo(
-                data.wall[i].x2 - data.player[clientNo].x + 1200/2,
-                data.wall[i].y2 - data.player[clientNo].y + 675/2);
+                ctx.lineTo(
+                    data.wall[i].x2 - data.player[clientNo].x + 1200/2,
+                    data.wall[i].y2 - data.player[clientNo].y + 675/2);
                 //console.log(data.wall[i].x2, data.wall[i].x2);
-            ctx.stroke();
-        }
-	});
+                ctx.stroke();
+            }
+        });
 
     //socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
 
@@ -91,7 +91,7 @@
             socket.emit('keyPress',{inputId:'up',state:true});
         else if(event.keyCode === 32) //space
             socket.emit('keyPress',{inputId:'space',state:true});
-           
+        
     }
 
     document.onkeyup = function(event){ // Key Up Detector

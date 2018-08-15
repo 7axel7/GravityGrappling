@@ -39,10 +39,10 @@ var Entity = function(){
 	}
 
 	self.update = function(){
-		self.applyGravity();
 		self.updatePosition();
+		self.applyGravity();
 		self.applyCollision();
-
+		self.applyFriction();
 	}
 
 	self.applyGravity = function(){
@@ -121,12 +121,7 @@ var Entity = function(){
 		}
 	//console.log(self.touching);
 	} //find applicable walls and applies collision
-
-	self.updatePosition = function(){
-		self.x += self.spdX;
-		self.y += self.spdY;
-
-		
+	self.applyFriction = function() {
 		if (self.touching.length >= 1){
 			for (var i in self.touching){
 				var wall = self.touching[i];
@@ -148,6 +143,11 @@ var Entity = function(){
 			}
 		}
 	}
+	self.updatePosition = function(){
+		self.x += self.spdX;
+		self.y += self.spdY;
+	}
+	return self;
 }
 
 var Player = function(id){
@@ -164,7 +164,7 @@ var Player = function(id){
     self.spdLim = 6;
     self.y = 1;
     self.rad = 10;
-    self.jumpheight = 100;
+    self.jumpheight = 5;
 
     var super_update = self.update;
 
