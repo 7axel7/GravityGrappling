@@ -194,8 +194,8 @@ var Player = function(id){
     			self.grappledir = self.mouseAngle;
     			self.grappleinit = false;
     		}
-    		self.grapplex += 2*Math.cos(self.grappledir);
-    		self.grappley += 2*Math.sin(self.grappledir);
+    		self.grapplex += 10*Math.cos(self.grappledir);
+    		self.grappley += 10*Math.sin(self.grappledir);
     	} else {
     		self.grappleinit = true;
     	}
