@@ -160,16 +160,22 @@ var Player = function(id){
     self.pressingDown = false;
     self.pressingSpace = false;
     self.pressingLeftClick = false;
+    self.grapple = false;
     self.mouseAngle = 0;
     self.spdLim = 6;
     self.y = 1;
     self.rad = 10;
     self.jumpheight = 5;
+    self.grapplex = 0;
+    self.grappley = 0;
+    self.grappledir = 0;
+    self.grappleinit = true;
 
     var super_update = self.update;
 
     self.update = function(){
     	self.updateSpd();
+    	self.updateGrapple();
     	super_update();
     }
 
@@ -178,6 +184,21 @@ var Player = function(id){
         var speed = 0.5*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
         // changing 1 to some other value will change how fast acceleration is.
         return speed;
+    }
+
+    self.updateGrapple = function(){
+    	if(self.grapple){
+    		if(self.grappleinit){
+    			self.grapplex = self.x;
+    			self.grappley = self.y;
+    			self.grappledir = self.mouseAngle;
+    			self.grappleinit = false;
+    		}
+    		self.grapplex += 2*Math.cos(self.grappledir);
+    		self.grappley += 2*Math.sin(self.grappledir);
+    	} else {
+    		self.grappleinit = true;
+    	}
     }
 
     self.updateSpd = function(){
@@ -245,7 +266,10 @@ Player.onConnect = function(socket){
         	player.pressingLeftClick = data.state;
         else if(data.inputId === 'mouseAngle')
         	player.mouseAngle = data.state;
-    });
+        else if(data.inputId === 'grapple')
+        	player.grapple = data.state;
+     });
+
 }
 
 Player.onDisconnect = function(socket){
@@ -297,12 +321,29 @@ Wall.update = function(){
 
 	for(var i in Wall.list){
 		var wall = Wall.list[i];
-		pack.push({ 
+		pack.push({
 			x1:wall.x1,
-			y1:wall.y1,
+ 			y1:wall.y1,
 			x2:wall.x2,
 			y2:wall.y2,
 		});
+	}
+	return pack;
+}
+
+Player.hookupdate = function(){
+	var pack = [];
+
+	for(var i in Player.list){
+		var player = Player.list[i];
+		if(player.grapple){
+			pack.push({ 
+				x1:player.x,
+				y1:player.y,
+				x2:player.grapplex,
+				y2:player.grappley,
+			});
+		}
 	}
 	return pack;
 }
@@ -319,11 +360,17 @@ wallTesty.y1 = -50
 wallTesty.x2 = 150
 wallTesty.y2 = 100
 
-var wallTesto = new Wall(3);
-wallTesto.x1 = 300
-wallTesto.y1 = -350
-wallTesto.x2 = 300
-wallTesto.y2 = -50
+var wallTester = new Wall(3);
+wallTester.x1 = 300
+wallTester.y1 = -350
+wallTester.x2 = 300
+wallTester.y2 = -50
+
+var wallTesty = new Wall(4);
+wallTesty.x1 = 150
+wallTesty.y1 = -200
+wallTesty.x2 = -200
+wallTesty.y2 = 150
 
 var Block = function(id){
 	var self = Terrain();
@@ -372,7 +419,8 @@ setInterval(function(){
 	var pack = {
 		player:Player.update(),
 		block:Block.update(),
-		wall:Wall.update()
+		wall:Wall.update(),
+		hook:Player.hookupdate(),
 	}
 	for(var i in SOCKET_LIST){ //Loop through all players
 		var socket = SOCKET_LIST[i];

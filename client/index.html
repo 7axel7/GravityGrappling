@@ -76,6 +76,19 @@
                 //console.log(data.wall[i].x2, data.wall[i].x2);
                 ctx.stroke();
             }
+
+            for(var i = 0; i < data.hook.length; i++){ //wall hook loop
+            ctx.beginPath();
+            ctx.moveTo(
+                data.hook[i].x1 - data.player[clientNo].x + 1200/2,
+                data.hook[i].y1 - data.player[clientNo].y + 675/2);
+                //console.log(data.wall[i].x1, data.wall[i].y1);
+                ctx.lineTo(
+                    data.hook[i].x2 - data.player[clientNo].x + 1200/2,
+                    data.hook[i].y2 - data.player[clientNo].y + 675/2);
+                //console.log(data.wall[i].x2, data.wall[i].x2);
+                ctx.stroke();
+            }
         });
 
     //socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
@@ -91,7 +104,9 @@
             socket.emit('keyPress',{inputId:'up',state:true});
         else if(event.keyCode === 32) //space
             socket.emit('keyPress',{inputId:'space',state:true});
-        
+        else if(event.keyCode === 69) //e
+            socket.emit('keyPress',{inputId:'grapple',state:true});
+
     }
 
     document.onkeyup = function(event){ // Key Up Detector
@@ -105,6 +120,8 @@
             socket.emit('keyPress',{inputId:'up',state:false});
         else if(event.keyCode === 32) //space
             socket.emit('keyPress',{inputId:'space',state:false});
+        else if(event.keyCode === 69) //e
+            socket.emit('keyPress',{inputId:'grapple',state:false});
     }
 
     document.onmousedown = function(event){ //Mouse Down Detector
@@ -116,9 +133,9 @@
     }
 
     document.onmousemove = function(event){ //Mouse Move Detector
-    	var x = -250 + event.clientX - 8;
-    	var y = -250 + event.clientY - 8;
-    	var angle = Math.atan2(y,x)/Math.PI*180;
+        var x = event.clientX - 1200/2;
+        var y = event.clientY - 625/2;
+    	var angle = Math.atan2(y,x);
     	socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
     }
 </script>
