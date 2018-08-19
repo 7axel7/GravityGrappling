@@ -28,7 +28,7 @@ var Entity = function(){
 	var self = {
 		fric:7, //how much friction affects movement
 		x:0,
-		y:0,
+		y:1,
 		spdX:0,
 		spdY:0,
 		grav:-1/10, //Personal gravity stat
@@ -163,7 +163,6 @@ var Player = function(id){
 	self.grapple = false;
 	self.mouseAngle = 0;
 	self.spdLim = 6;
-	self.y = 1;
 	self.rad = 10;
 	self.jumpheight = 5;
 	self.grapplex = 0;
@@ -171,6 +170,7 @@ var Player = function(id){
 	self.grappledir = 0;
 	self.grappleinit = true;
 	self.camAngle = 0;
+	self.moveSpd = 1;
 
 	var super_update = self.update;
 
@@ -189,27 +189,42 @@ var Player = function(id){
     }
     
     self.updateSpd = function(){
+    	var tVel = polarize (self.spdX, self.spdY); //total velocity
+    	var ms = self.determineSpd(tVel[0], self.moveSpd, self.spdLim); //determine speed
+
     	if(self.pressingRight){
     		if (self.touching.length >= 1){
-    			self.spdX += self.determineSpd(self.spdX,1,self.spdLim)
+    			var rMov = []; //di force towards right
+    			rMov = depolarize(ms, (self.camAngle + Math.PI*2)%(2*Math.PI)); //takes camera angle and adds 1/2 pi (90 degrees), modulo for sanitation
+    			self.spdX += rMov[0];
+    			self.spdY += rMov[1];
     		}
     	}
 
     	if(self.pressingLeft){
     		if (self.touching.length >= 1){	
-    			self.spdX += self.determineSpd(self.spdX,-1,self.spdLim)
+    			var lMov = [];
+    			lMov = depolarize(ms, (self.camAngle + Math.PI)%(2*Math.PI)); 
+    			self.spdX += lMov[0];
+    			self.spdY += lMov[1];
     		}
     	}
 
-    	if(self.pressingDown){
+    	if(self.pressingDown){ //note!!! maybe remove vertical DI in future????
     		if (self.touching.length >= 1){
-    			self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
+    			var dMov = []; 
+    			dMov = depolarize(ms, (self.camAngle + Math.PI/2)%(2*Math.PI)); //+ math.PI = +180 degrees
+    			self.spdX += dMov[0];
+    			self.spdY += dMov[1];
     		}
     	}
 
     	if(self.pressingUp){
     		if (self.touching.length >= 1){
-    			self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
+    			var uMov = []; 
+    			uMov = depolarize(ms, (self.camAngle + Math.PI*3/2)%(2*Math.PI));
+    			self.spdX += uMov[0];
+    			self.spdY += uMov[1];
     		}
     	}
 
