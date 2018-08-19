@@ -235,8 +235,6 @@ var Player = function(id){
         			var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1); //find out wall's angle
         			var jump = [];
         			jump = depolarize(self.jumpheight / self.touching.length, wAng + Math.PI/2); //jump according to normal
-        			self.X += jump[0];
-        			self.Y += jump[1];
         			self.spdX += jump[0];
         			self.spdY += jump[1];
         		}
