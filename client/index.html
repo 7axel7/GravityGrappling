@@ -10,83 +10,81 @@
 
 	socket.on('newPositions',function(data, clientId){ //listens for newPositions
         ctx.clearRect(0,0,1200,675);
-        var clientNo = 0 // which player is the user
 
         for(var i = 0; i < data.player.length; i++){ 
-            //console.log(data.player[i].number, clientId);
-            if (data.player[i].pId == clientId){
-                clientNo = i;
+            var player = data.player[i];
+            //console.log(player.number, clientId);
+            if (player.pId == clientId){
+                var client = data.player[i];
             } //find clientNo
         }
 
 		for(var i = 0; i < data.player.length; i++){ //player draw loop
-            if (data.player[i].pId == clientId){
-                ctx.fillText(data.player[i].number,1200/2,675/2);
+            var player = data.player[i];
+            if (player.pId == clientId){
+                ctx.fillText(player.number,1200/2,675/2);
                 ctx.beginPath();
                 ctx.arc(1200/2,675/2,10, 0, Math.PI*2);
                 ctx.stroke();
                 ctx.strokeStyle = "#55CCFF";
                 ctx.beginPath();
                 ctx.moveTo(1200/2,675/2);
-                ctx.lineTo(1200/2 + data.player[i].spdX, 675/2 + data.player[i].spdY);
+                ctx.lineTo(1200/2 + player.spdX, 675/2 + player.spdY);
                 ctx.stroke();
                 ctx.strokeStyle = "#000000"
-            } //if data.player[i] is the client, draw them in the center
+            } //if player is the client, draw them in the center
             else {
-                //console.log(data.player[i].number,data.player[i].x,data.player[i].y);
+                //console.log(player.number,player.x,player.y);
                 ctx.fillText(
-                    data.player[i].number,
-                    data.player[i].x - data.player[clientNo].x + 1200/2,
+                    player.number,
+                    player.x - client.x + 1200/2,
                     //draw everyone else based on the client's pos
-                    data.player[i].y - data.player[clientNo].y + 675/2
+                    player.y - client.y + 675/2
                     );
                 ctx.beginPath();
-                ctx.arc(data.player[i].x - data.player[clientNo].x + 1200/2,
-                    data.player[i].y - data.player[clientNo].y + 675/2,
+                ctx.arc(player.x - client.x + 1200/2,
+                    player.y - client.y + 675/2,
                     10, 0, Math.PI*2);
                 ctx.stroke();
             }
         };
 
         for(var i = 0; i < data.block.length; i++){ //block draw loop
-            /*console.log(
-                data.block[i].x1 - data.player[clientNo].x,
-                data.block[i].y1 - data.player[clientNo].y,
-                data.block[i].x2,
-                data.block[i].y2
-                );*/
-                ctx.fillRect(
-                    data.block[i].x1 - data.player[clientNo].x + 1200/2, 
+            var block = data.block[i];
+            ctx.fillRect(
+                block.x1 - client.x + 1200/2, 
                 //moves all blocks according to client's pos
-                data.block[i].y1 - data.player[clientNo].y + 675/2,
-                data.block[i].x2,
-                data.block[i].y2
+                block.y1 - client.y + 675/2,
+                block.x2,
+                block.y2
                 );
             };
 
         for(var i = 0; i < data.wall.length; i++){ //wall draw loop
+            var wall = data.wall[i];
             ctx.beginPath();
             ctx.moveTo(
-                data.wall[i].x1 - data.player[clientNo].x + 1200/2,
-                data.wall[i].y1 - data.player[clientNo].y + 675/2);
-                //console.log(data.wall[i].x1, data.wall[i].y1);
+                wall.x1 - client.x + 1200/2,
+                wall.y1 - client.y + 675/2);
+                //console.log(wall.x1, wall.y1);
                 ctx.lineTo(
-                    data.wall[i].x2 - data.player[clientNo].x + 1200/2,
-                    data.wall[i].y2 - data.player[clientNo].y + 675/2);
-                //console.log(data.wall[i].x2, data.wall[i].x2);
+                    wall.x2 - client.x + 1200/2,
+                    wall.y2 - client.y + 675/2);
+                //console.log(wall.x2, wall.x2);
                 ctx.stroke();
             }
 
             for(var i = 0; i < data.hook.length; i++){ //wall hook loop
-            ctx.beginPath();
-            ctx.moveTo(
-                data.hook[i].x1 - data.player[clientNo].x + 1200/2,
-                data.hook[i].y1 - data.player[clientNo].y + 675/2);
-                //console.log(data.wall[i].x1, data.wall[i].y1);
+                var hook = data.hook[i];
+                ctx.beginPath();
+                ctx.moveTo(
+                    hook.x1 - client.x + 1200/2,
+                    hook.y1 - client.y + 675/2);
+                    //console.log(wall.x1, wall.y1);
                 ctx.lineTo(
-                    data.hook[i].x2 - data.player[clientNo].x + 1200/2,
-                    data.hook[i].y2 - data.player[clientNo].y + 675/2);
-                //console.log(data.wall[i].x2, data.wall[i].x2);
+                    hook.x2 - client.x + 1200/2,
+                    hook.y2 - client.y + 675/2);
+                    //console.log(wall.x2, wall.x2);
                 ctx.stroke();
             }
         });

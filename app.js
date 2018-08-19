@@ -170,12 +170,14 @@ var Player = function(id){
     self.grappley = 0;
     self.grappledir = 0;
     self.grappleinit = true;
+    self.camAngle = 0
 
     var super_update = self.update;
 
     self.update = function(){
     	self.updateSpd();
     	self.updateGrapple();
+    	self.updatecamAngle();
     	super_update();
     }
 
@@ -185,22 +187,7 @@ var Player = function(id){
         // changing 1 to some other value will change how fast acceleration is.
         return speed;
     }
-
-    self.updateGrapple = function(){
-    	if(self.grapple){
-    		if(self.grappleinit){
-    			self.grapplex = self.x;
-    			self.grappley = self.y;
-    			self.grappledir = self.mouseAngle;
-    			self.grappleinit = false;
-    		}
-    		self.grapplex += 10*Math.cos(self.grappledir);
-    		self.grappley += 10*Math.sin(self.grappledir);
-    	} else {
-    		self.grappleinit = true;
-    	}
-    }
-
+    
     self.updateSpd = function(){
         if(self.pressingRight){
         	if (self.touching.length >= 1){
@@ -241,6 +228,27 @@ var Player = function(id){
         	}
         }
     }
+
+    self.updateGrapple = function(){
+    	if(self.grapple){
+    		if(self.grappleinit){
+    			self.grapplex = self.x;
+    			self.grappley = self.y;
+    			self.grappledir = self.mouseAngle;
+    			self.grappleinit = false;
+    		}
+    		self.grapplex += 10*Math.cos(self.grappledir);
+    		self.grappley += 10*Math.sin(self.grappledir);
+    	} else {
+    		self.grappleinit = true;
+    	}
+    }
+
+    self.updatecamAngle = function(){
+    	var Pangle = Math.atan2(0 - self.y, 0 - self.x);
+    	var Camgle = (Pangle - (Math.PI * 3 / 2)) % (2*Math.PI);
+    }
+
     Player.list[id] = self;
     return self;
 }
@@ -289,6 +297,7 @@ Player.update = function(){ // packs player info every update
 			pId:player.id,
 			spdX:player.spdX,
 			spdY:player.spdY,
+			rot:player.camAngle
 		});
 	}
 	return pack;
