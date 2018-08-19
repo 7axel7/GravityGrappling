@@ -7,87 +7,113 @@
 	var socket = io(); //Connect to server
 	var c = document.getElementById("myCanvas"); //Creates canvas
 	var ctx = c.getContext("2d");
+    
 
 	socket.on('newPositions',function(data, clientId){ //listens for newPositions
         ctx.clearRect(0,0,1200,675);
-
+        var scrC = [1200/2, 675/2];
+        var client;
+        var theta;
+        
         for(var i = 0; i < data.player.length; i++){ 
             var player = data.player[i];
             //console.log(player.number, clientId);
             if (player.pId == clientId){
-                var client = data.player[i];
-            } //find clientNo
+                client = data.player[i];
+                theta = data.player[i].rot;
+            } //set var client
         }
+
+        var rotato = function(x, y){
+            var r = [
+                [Math.cos(theta), Math.sin(theta)],
+                [-Math.sin(theta), Math.cos(theta)]
+            ]
+            var rX = r[0][0] * x + r[0][1] * y;
+            var rY = r[1][0] * x + r[1][1] * y;
+            return [rX, rY];
+            //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
+        }
+
+        //console.log(rotato(100, 100), theta);
 
 		for(var i = 0; i < data.player.length; i++){ //player draw loop
             var player = data.player[i];
+
             if (player.pId == clientId){
-                ctx.fillText(player.number,1200/2,675/2);
+                ctx.fillText(player.number,scrC[0], scrC[1]);
                 ctx.beginPath();
-                ctx.arc(1200/2,675/2,10, 0, Math.PI*2);
+                ctx.arc(scrC[0],scrC[1],10, 0, Math.PI*2);
                 ctx.stroke();
                 ctx.strokeStyle = "#55CCFF";
                 ctx.beginPath();
-                ctx.moveTo(1200/2,675/2);
-                ctx.lineTo(1200/2 + player.spdX, 675/2 + player.spdY);
+                ctx.moveTo(scrC[0],scrC[1]);
+                var RSpd = [];
+                RSpd = rotato(player.spdX, player.spdY);
+                ctx.lineTo(scrC[0] + RSpd[0], scrC[1] + RSpd[1]);
                 ctx.stroke();
                 ctx.strokeStyle = "#000000"
             } //if player is the client, draw them in the center
             else {
+                var rotCoords = rotato(player.x - client.x, player.y - client.y);
                 //console.log(player.number,player.x,player.y);
                 ctx.fillText(
                     player.number,
-                    player.x - client.x + 1200/2,
-                    //draw everyone else based on the client's pos
-                    player.y - client.y + 675/2
+                    rotCoords[0] + scrC[0],
+                    rotCoords[1] + scrC[1]
                     );
                 ctx.beginPath();
-                ctx.arc(player.x - client.x + 1200/2,
-                    player.y - client.y + 675/2,
+                ctx.arc(
+                    rotCoords[0] + scrC[0],
+                    rotCoords[1] + scrC[1],
                     10, 0, Math.PI*2);
                 ctx.stroke();
             }
         };
-
+/*
         for(var i = 0; i < data.block.length; i++){ //block draw loop
             var block = data.block[i];
             ctx.fillRect(
-                block.x1 - client.x + 1200/2, 
+                block.x1 - client.x + scrC[0], 
                 //moves all blocks according to client's pos
-                block.y1 - client.y + 675/2,
+                block.y1 - client.y + scrC[1],
                 block.x2,
                 block.y2
                 );
-            };
-
+        };
+*/
         for(var i = 0; i < data.wall.length; i++){ //wall draw loop
             var wall = data.wall[i];
+            var rotCoords1 = rotato(wall.x1 - client.x, wall.y1 - client.y);
+            var rotCoords2 = rotato(wall.x2 - client.x, wall.y2 - client.y);
             ctx.beginPath();
             ctx.moveTo(
-                wall.x1 - client.x + 1200/2,
-                wall.y1 - client.y + 675/2);
+                rotCoords1[0] + scrC[0],
+                rotCoords1[1] + scrC[1]);
                 //console.log(wall.x1, wall.y1);
-                ctx.lineTo(
-                    wall.x2 - client.x + 1200/2,
-                    wall.y2 - client.y + 675/2);
+            ctx.lineTo(
+                rotCoords2[0] + scrC[0],
+                rotCoords2[1] + scrC[1]);
                 //console.log(wall.x2, wall.x2);
-                ctx.stroke();
-            }
+            ctx.stroke();
+        }
 
-            for(var i = 0; i < data.hook.length; i++){ //wall hook loop
-                var hook = data.hook[i];
-                ctx.beginPath();
-                ctx.moveTo(
-                    hook.x1 - client.x + 1200/2,
-                    hook.y1 - client.y + 675/2);
-                    //console.log(wall.x1, wall.y1);
-                ctx.lineTo(
-                    hook.x2 - client.x + 1200/2,
-                    hook.y2 - client.y + 675/2);
-                    //console.log(wall.x2, wall.x2);
-                ctx.stroke();
-            }
-        });
+        for(var i = 0; i < data.hook.length; i++){ //wall hook loop
+            var hook = data.hook[i];
+            var rotCoords1 = rotato(hook.x1 - client.x, hook.y1 - client.y);
+            var rotCoords2 = rotato(hook.x2 - client.x, hook.y2 - client.y);
+            ctx.beginPath();
+            ctx.moveTo(
+                rotCoords1[0] + scrC[0],
+                rotCoords1[1] + scrC[1]);
+                //console.log(wall.x1, wall.y1);
+            ctx.lineTo(
+                rotCoords2[0] + scrC[0],
+                rotCoords2[1] + scrC[1]);
+                //console.log(wall.x2, wall.x2);
+            ctx.stroke();
+        }
+    });
 
     //socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
 
@@ -133,7 +159,7 @@
     document.onmousemove = function(event){ //Mouse Move Detector
         var x = event.clientX - 1200/2;
         var y = event.clientY - 625/2;
-    	var angle = Math.atan2(y,x);
-    	socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
+        var angle = Math.atan2(y,x);
+        socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
     }
 </script>

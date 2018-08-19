@@ -98,7 +98,7 @@ var Entity = function(){
 						var wb = -1 * (wall.x2 - wall.x1);
 						var wc = (wall.x2 - wall.x1) * wall.y1 -
 							 (wall.y2 - wall.y1) * wall.x1; //find A,B,C in line's standard form equation
-						var wm = self.x + self.spdX + (wc + wb * self.y)/wa;
+							 var wm = self.x + self.spdX + (wc + wb * self.y)/wa;
 						var wn = self.y + self.spdY + (wc + wa * self.x)/wb; //do some math magic relating to player's position
 						var dist = Math.abs((wm * wn) / Math.sqrt(Math.pow(wm, 2) + Math.pow(wn, 2))); 
 						//find distance from player's center to the closest point on the line
@@ -151,37 +151,37 @@ var Entity = function(){
 }
 
 var Player = function(id){
-    var self = Entity();
-    self.id = id;
-    self.number = "" + Math.floor(10 * Math.random());
-    self.pressingRight = false;
-    self.pressingLeft = false;
-    self.pressingUp = false;
-    self.pressingDown = false;
-    self.pressingSpace = false;
-    self.pressingLeftClick = false;
-    self.grapple = false;
-    self.mouseAngle = 0;
-    self.spdLim = 6;
-    self.y = 1;
-    self.rad = 10;
-    self.jumpheight = 5;
-    self.grapplex = 0;
-    self.grappley = 0;
-    self.grappledir = 0;
-    self.grappleinit = true;
-    self.camAngle = 0
+	var self = Entity();
+	self.id = id;
+	self.number = "" + Math.floor(10 * Math.random());
+	self.pressingRight = false;
+	self.pressingLeft = false;
+	self.pressingUp = false;
+	self.pressingDown = false;
+	self.pressingSpace = false;
+	self.pressingLeftClick = false;
+	self.grapple = false;
+	self.mouseAngle = 0;
+	self.spdLim = 6;
+	self.y = 1;
+	self.rad = 10;
+	self.jumpheight = 5;
+	self.grapplex = 0;
+	self.grappley = 0;
+	self.grappledir = 0;
+	self.grappleinit = true;
+	self.camAngle = 0;
 
-    var super_update = self.update;
+	var super_update = self.update;
 
-    self.update = function(){
-    	self.updateSpd();
-    	self.updateGrapple();
-    	self.updatecamAngle();
-    	super_update();
-    }
+	self.update = function(){
+		self.updateSpd();
+		self.updateGrapple();
+		self.updatecamAngle();
+		super_update();
+	}
 
-    self.determineSpd = function(velocity,direction,spdLim){
+	self.determineSpd = function(velocity,direction,spdLim){
         var temp = direction*spdLim; // spdLim is speed limit
         var speed = 0.5*direction*Math.min(Math.abs(temp-velocity),Math.abs(temp)); // function that decreases speed as it nears the limit
         // changing 1 to some other value will change how fast acceleration is.
@@ -189,31 +189,31 @@ var Player = function(id){
     }
     
     self.updateSpd = function(){
-        if(self.pressingRight){
-        	if (self.touching.length >= 1){
-        		self.spdX += self.determineSpd(self.spdX,1,self.spdLim)
-        	}
-        }
+    	if(self.pressingRight){
+    		if (self.touching.length >= 1){
+    			self.spdX += self.determineSpd(self.spdX,1,self.spdLim)
+    		}
+    	}
 
-        if(self.pressingLeft){
-        	if (self.touching.length >= 1){	
-        		self.spdX += self.determineSpd(self.spdX,-1,self.spdLim)
-        	}
-        }
-    
+    	if(self.pressingLeft){
+    		if (self.touching.length >= 1){	
+    			self.spdX += self.determineSpd(self.spdX,-1,self.spdLim)
+    		}
+    	}
+
     	if(self.pressingDown){
-        	if (self.touching.length >= 1){
-        		self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
-        	}
-        }
+    		if (self.touching.length >= 1){
+    			self.spdY += self.determineSpd(self.spdY,1,self.spdLim)
+    		}
+    	}
 
-        if(self.pressingUp){
-        	if (self.touching.length >= 1){
-        		self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
-        	}
-        }
+    	if(self.pressingUp){
+    		if (self.touching.length >= 1){
+    			self.spdY += self.determineSpd(self.spdY,-1,self.spdLim)
+    		}
+    	}
 
-        if(self.pressingSpace){
+    	if(self.pressingSpace){
         	if (self.touching.length >= 1){ // if player is touching a wall
         		for (var i in self.touching){
         			var wall = self.touching[i];
@@ -223,7 +223,7 @@ var Player = function(id){
         			self.X += jump[0];
         			self.Y += jump[1];
         			self.spdX += jump[0];
-					self.spdY += jump[1];
+        			self.spdY += jump[1];
         		}
         	}
         }
@@ -246,7 +246,7 @@ var Player = function(id){
 
     self.updatecamAngle = function(){
     	var Pangle = Math.atan2(0 - self.y, 0 - self.x);
-    	var Camgle = (Pangle - (Math.PI * 3 / 2)) % (2*Math.PI);
+    	self.camAngle = (Pangle - (Math.PI * 3 / 2)) % (2*Math.PI);
     }
 
     Player.list[id] = self;
@@ -260,23 +260,23 @@ Player.onConnect = function(socket){
 	var player = Player(socket.id);
 
 	socket.on('keyPress',function(data){
-        if(data.inputId === 'left')
-            player.pressingLeft = data.state;
-        else if(data.inputId === 'right')
-            player.pressingRight = data.state;
-        else if(data.inputId === 'up')
-            player.pressingUp = data.state;
-        else if(data.inputId === 'down')
-            player.pressingDown = data.state;
-        else if(data.inputId === 'space')
-            player.pressingSpace = data.state;
-        else if(data.inputId === 'lClick')
-        	player.pressingLeftClick = data.state;
-        else if(data.inputId === 'mouseAngle')
-        	player.mouseAngle = data.state;
-        else if(data.inputId === 'grapple')
-        	player.grapple = data.state;
-     });
+		if(data.inputId === 'left')
+			player.pressingLeft = data.state;
+		else if(data.inputId === 'right')
+			player.pressingRight = data.state;
+		else if(data.inputId === 'up')
+			player.pressingUp = data.state;
+		else if(data.inputId === 'down')
+			player.pressingDown = data.state;
+		else if(data.inputId === 'space')
+			player.pressingSpace = data.state;
+		else if(data.inputId === 'lClick')
+			player.pressingLeftClick = data.state;
+		else if(data.inputId === 'mouseAngle')
+			player.mouseAngle = data.state;
+		else if(data.inputId === 'grapple')
+			player.grapple = data.state;
+	});
 
 }
 
@@ -332,7 +332,7 @@ Wall.update = function(){
 		var wall = Wall.list[i];
 		pack.push({
 			x1:wall.x1,
- 			y1:wall.y1,
+			y1:wall.y1,
 			x2:wall.x2,
 			y2:wall.y2,
 		});
