@@ -3,9 +3,9 @@ var app = express();
 var serv = require('http').Server(app);
 
 app.get('/', function(req, res) { //Makes it redirect localhost:2000 to
-	res.sendFile(__dirname + '/client/index.html'); //client/index.html
+	res.sendFile(__dirname + '/docs/index.html'); //docs/index.html
 });
-app.use('/client',express.static(__dirname + '/client'));
+app.use('/docs',express.static(__dirname + '/docs'));
 
 serv.listen(2000); // Server port localhost:2000
 console.log('Server started.');
