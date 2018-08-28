@@ -77,7 +77,7 @@ var Entity = function(){
 						self.y += bumpOut[1];
 						self.spdX += bumpSpd[0];
 						self.spdY += bumpSpd[1];	
-						self.touching[i] = wall;
+						self.touching.push(wall);
 						//console.log(bumpOut);
 					}
 					else if(wall.y1 == wall.y2){ // horizontal wall special case
@@ -91,7 +91,7 @@ var Entity = function(){
 						self.y += bumpOut[1];
 						self.spdX += bumpSpd[0];
 						self.spdY += bumpSpd[1];	
-						self.touching[i] = wall;
+						self.touching.push(wall);
 						//console.log(bumpOut);
 					}
 					else{ //all other walls; have to do more math to detect collision
@@ -235,7 +235,7 @@ var Player = function(id){
         			var wall = self.touching[i];
         			var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1); //find out wall's angle
         			var jump = [];
-        			jump = depolarize(self.jumpheight / self.touching.length, wAng + Math.PI/2); //jump according to normal
+        			jump = depolarize(self.jumpheight / self.touching.length, wAng - Math.PI/2); //jump according to normal
         			self.spdX += jump[0];
         			self.spdY += jump[1];
         		}
