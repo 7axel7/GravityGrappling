@@ -1,12 +1,13 @@
 var express = require('express'); //Uses express
-var app = express();
-var serv = require('http').Server(app);
+var app = express(); //app is an instance of express
+var serv = require('http').Server(app); //Requires HTTP module; serv is an http object
+var fs = require('fs'); // Uses File System
 
-app.get('/', function(req, res) { //Makes it redirect localhost:2000 to
-	res.sendFile(__dirname + '/index.html'); // index.html
+app.get('/', function(req, res) { //When a GET request is made, i.e. someone tries to access the site
+	res.sendFile(__dirname + '/index.html'); // send them index.html
 });
-app.use('/',express.static(__dirname));
 
+app.use('/', express.static(__dirname)); //when any request is made give them everything in the root
 serv.listen(2000); // Server port localhost:2000
 console.log('Server started.');
 
@@ -68,10 +69,10 @@ var Entity = function(){
 					if (wall.x1 == wall.x2){ //vertical wall special case
 						var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
 						var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag 
-						var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
+						var angDiff = Math.abs(pVec[1] - (wAng - Math.PI/2)); //take theta
 						var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-						var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2)); //counteract the normal force
-						var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.x) - Math.abs(wall.x1)), (wAng + Math.PI/2)); //plus extra to push you out of the wall
+						var bumpSpd = depolarize(-1*normalForce, (wAng - Math.PI/2)); //counteract the normal force
+						var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.x) - Math.abs(wall.x1)), (wAng - Math.PI/2)); //plus extra to push you out of the wall
 						self.x += bumpOut[0];
 						self.y += bumpOut[1];
 						self.spdX += bumpSpd[0];
@@ -82,10 +83,10 @@ var Entity = function(){
 					else if(wall.y1 == wall.y2){ // horizontal wall special case
 						var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
 						var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
-						var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
+						var angDiff = Math.abs(pVec[1] - (wAng - Math.PI/2)); //take theta
 						var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-						var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2)); //counteract the normal force
-						var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.y) - Math.abs(wall.y1)), (wAng + Math.PI/2)); //plus extra to push you out of the wall
+						var bumpSpd = depolarize(-1*normalForce, (wAng - Math.PI/2)); //counteract the normal force
+						var bumpOut = depolarize(self.rad - Math.abs(Math.abs(self.y) - Math.abs(wall.y1)), (wAng - Math.PI/2)); //plus extra to push you out of the wall
 						self.x += bumpOut[0];
 						self.y += bumpOut[1];
 						self.spdX += bumpSpd[0];
@@ -105,10 +106,10 @@ var Entity = function(){
 						if(dist <= self.rad){
 							var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
 							var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
-							var angDiff = Math.abs(pVec[1] - (wAng + Math.PI/2)); //take theta
+							var angDiff = Math.abs(pVec[1] - (wAng - Math.PI/2)); //take theta
 							var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-							var bumpSpd = depolarize(-1*normalForce, (wAng + Math.PI/2)); //counteract the normal force
-							var bumpOut = depolarize(self.rad - dist, (wAng + Math.PI/2)); //plus extra to push you out of the wall
+							var bumpSpd = depolarize(-1*normalForce, (wAng - Math.PI/2)); //counteract the normal force
+							var bumpOut = depolarize(self.rad - dist, (wAng - Math.PI/2)); //plus extra to push you out of the wall
 							self.x += bumpOut[0];
 							self.y += bumpOut[1];	
 							self.spdX += bumpSpd[0];
@@ -290,7 +291,6 @@ Player.onConnect = function(socket){
 		else if(data.inputId === 'grapple')
 			player.grapple = data.state;
 	});
-
 }
 
 Player.onDisconnect = function(socket){
@@ -315,6 +315,7 @@ Player.update = function(){ // packs player info every update
 	}
 	return pack;
 }
+
 var Terrain = function(id){
 	var self = {
 		x1:0,
@@ -324,11 +325,16 @@ var Terrain = function(id){
 		ttype:0, //terrain type if we ever need it
 		id:""
 	}
+	self.id = id;
 	return self;
 }
 
-var Wall = function(id){
+var Wall = function(coords, id){
 	var self = Terrain();
+	self.x1 = Number(coords[0]);
+	self.y1 = Number(coords[1]);
+	self.x2 = Number(coords[2]);
+	self.y2 = Number(coords[3]);
 	self.id = id;
 	self.midx = (self.x1 + self.x2)/2 //avg the coords for midpoint
 	self.midy = (self.y1 + self.y2)/2
@@ -370,29 +376,21 @@ Player.hookupdate = function(){
 	return pack;
 }
 
-var wallTest = new Wall(1);
-wallTest.x1 = 150
-wallTest.y1 = 100
-wallTest.x2 = -150
-wallTest.y2 = 100
+var mapRead = function(){ //reads map and makes walls according to it
+	fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the content of map.txt and returns it as a string
+		if (err){
+			return console.log(err);
+		}
+		//console.log(data);
+		var map = data.split("\n"); //split lines into separate strings
+		for (i in map){ // loop through all lines
+			var wCoords = map[i].split(" "); //split strings into separate coords
+			var wInit = new Wall(wCoords, i); //makes new wall
+		}
+	});
+}
 
-var wallTesty = new Wall(2);
-wallTesty.x1 = 300
-wallTesty.y1 = -50
-wallTesty.x2 = 150
-wallTesty.y2 = 100
-
-var wallTester = new Wall(3);
-wallTester.x1 = 300
-wallTester.y1 = -350
-wallTester.x2 = 300
-wallTester.y2 = -50
-
-var wallTesty = new Wall(4);
-wallTesty.x1 = 150
-wallTesty.y1 = -200
-wallTesty.x2 = -200
-wallTesty.y2 = 150
+mapRead();
 
 var Block = function(id){
 	var self = Terrain();
