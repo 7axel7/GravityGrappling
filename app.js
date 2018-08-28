@@ -48,7 +48,6 @@ var Entity = function(){
 
 	self.applyGravity = function(){
 		var Grangle = Math.atan2(0 - self.y, 0 - self.x); //find angle towards 0,0
-		var gravVector = [];
 		var gravVector = depolarize(self.grav, Grangle);
 		self.spdX += gravVector[0];
 		self.spdY += gravVector[1];
@@ -161,23 +160,24 @@ var Player = function(id){
 	self.pressingDown = false;
 	self.pressingSpace = false;
 	self.pressingLeftClick = false;
-	self.grapple = false;
+	self.grapplePress = false;
 	self.mouseAngle = 0;
 	self.spdLim = 6;
 	self.rad = 10;
 	self.jumpheight = 5;
 	self.grapplex = 0;
 	self.grappley = 0;
-	self.grappledir = 0;
-	self.grappleinit = true;
+	self.grappleDir = 0;
+	self.grappleLen = 500;
+	self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
 	self.camAngle = 0;
 	self.moveSpd = 1;
 
 	var super_update = self.update;
 
 	self.update = function(){
-		self.updateSpd();
 		self.updateGrapple();
+		self.updateSpd();
 		self.updatecamAngle();
 		super_update();
 	}
@@ -244,17 +244,71 @@ var Player = function(id){
     }
 
     self.updateGrapple = function(){
-    	if(self.grapple){
-    		if(self.grappleinit){
-    			self.grapplex = self.x;
-    			self.grappley = self.y;
-    			self.grappledir = self.mouseAngle;
-    			self.grappleinit = false;
+    	var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
+    	if(self.grappleState == 0){ //grapple is off
+    		self.grapplex = self.x;
+    		self.grappley = self.y;
+
+    		if(self.grapplePress){ // if player is pressing grapple button
+    			self.grappleDir = self.mouseAngle;
+    			self.grappleState = 1;
     		}
-    		self.grapplex += 10*Math.cos(self.grappledir);
-    		self.grappley += 10*Math.sin(self.grappledir);
-    	} else {
-    		self.grappleinit = true;
+    	}
+    	if(self.grappleState == 1){ //grapple is midair
+    		self.grapplex += 10*Math.cos(self.grappleDir);
+    		self.grappley += 10*Math.sin(self.grappleDir);
+    		if(grappleDist[0] > self.grappleLen){ //
+    			self.grappleState = 0
+    		}
+
+    		for(var i in Wall.list){
+				var wall = Wall.list[i]; //loop through all walls
+				if (Math.sqrt(Math.pow(wall.midx - self.grapplex, 2) + 
+					Math.pow(wall.midy - self.grappley, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
+					var newX = self.grapplex + 10*Math.cos(self.grappleDir);
+					var newY = self.grappley + 10*Math.sin(self.grappleDir);
+					var a = (self.grapplex * newY - self.grappley * newX);
+					var b = (wall.x1 * wall.y2 - wall.y1 * wall.x2);
+					var cx = (self.grapplex - newX);
+					var dx = (wall.x1 - wall.x2);
+					var cy = (self.grappley - newY);
+					var dy = (wall.y1 - wall.y2);
+					var px = (a * dx - cx * b) / (cx * dy - cy * dx);
+					var py = (a * dy - cy * b) / (cx * dy - cy * dx);
+					if (Math.min(wall.x1, wall.x2) < px &&
+						Math.max(wall.x1, wall.x2) > px &&
+						Math.min(wall.y1, wall.y2) < py &&
+						Math.max(wall.y1, wall.y2) > py &&
+						Math.min(self.grapplex, newX) < px &&
+						Math.max(self.grapplex, newX) > px &&
+						Math.min(self.grappley, newY) < py &&
+						Math.max(self.grappley, newY) > py){
+						self.grappleState = 2;
+						self.grapplex = px;
+						self.grappley = py;
+					}
+				}
+			}
+		}	
+		if(self.grappleState == 2){
+    		if(grappleDist[0] > self.grappleLen){
+    			var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
+				var pVec = polarize(self.spdX, self.spdY)
+    			var angDiff = Math.abs(pVec[1] - ang); //take theta
+				var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
+				var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force
+				var bumpOut = depolarize(grappleDist[0] - self.grappleLen, ang); //plus extra to push you out of the wall
+				self.x += bumpOut[0];
+				self.y += bumpOut[1];	
+				self.spdX += bumpSpd[0];
+				self.spdY += bumpSpd[1];
+				//console.log(ang, self.x, self.y, bumpOut);	
+    		}
+		}
+    	if(self.grappleState != 0){ //grapple is not off
+    		if(self.pressingSpace){ // press space to bring it back
+    			self.grappleState = 0;
+    		}
     	}
     }
 
@@ -289,7 +343,7 @@ Player.onConnect = function(socket){
 		else if(data.inputId === 'mouseAngle')
 			player.mouseAngle = data.state;
 		else if(data.inputId === 'grapple')
-			player.grapple = data.state;
+			player.grapplePress = data.state;
 	});
 }
 
@@ -364,7 +418,7 @@ Player.hookupdate = function(){
 
 	for(var i in Player.list){
 		var player = Player.list[i];
-		if(player.grapple){
+		if(player.grappleState > 0){
 			pack.push({ 
 				x1:player.x,
 				y1:player.y,
