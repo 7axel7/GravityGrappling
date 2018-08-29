@@ -7,13 +7,22 @@
 	var socket = io(); //Connect to server
 	var c = document.getElementById("myCanvas"); //Creates canvas
 	var ctx = c.getContext("2d");
-    
+    var scrC = [1200/2, 675/2];
+    var client;
+    var theta;
 
+    var rotato = function(x, y, thetaa){
+        var r = [
+            [Math.cos(thetaa), Math.sin(thetaa)],
+            [-Math.sin(thetaa), Math.cos(thetaa)]
+        ]
+        var rX = r[0][0] * x + r[0][1] * y;
+        var rY = r[1][0] * x + r[1][1] * y;
+        return [rX, rY];
+        //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
+    }
 	socket.on('newPositions',function(data, clientId){ //listens for newPositions
         ctx.clearRect(0,0,1200,675);
-        var scrC = [1200/2, 675/2];
-        var client;
-        var theta;
         
         for(var i = 0; i < data.player.length; i++){ 
             var player = data.player[i];
@@ -22,17 +31,6 @@
                 client = data.player[i];
                 theta = data.player[i].rot;
             } //set var client
-        }
-
-        var rotato = function(x, y){
-            var r = [
-                [Math.cos(theta), Math.sin(theta)],
-                [-Math.sin(theta), Math.cos(theta)]
-            ]
-            var rX = r[0][0] * x + r[0][1] * y;
-            var rY = r[1][0] * x + r[1][1] * y;
-            return [rX, rY];
-            //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
         }
 
         //console.log(rotato(100, 100), theta);
@@ -55,7 +53,7 @@
                 ctx.strokeStyle = "#000000"
             } //if player is the client, draw them in the center
             else {
-                var rotCoords = rotato(player.x - client.x, player.y - client.y);
+                var rotCoords = rotato(player.x - client.x, player.y - client.y, theta);
                 //console.log(player.number,player.x,player.y);
                 ctx.fillText(
                     player.number,
@@ -84,8 +82,8 @@
 */
         for(var i = 0; i < data.wall.length; i++){ //wall draw loop
             var wall = data.wall[i];
-            var rotCoords1 = rotato(wall.x1 - client.x, wall.y1 - client.y);
-            var rotCoords2 = rotato(wall.x2 - client.x, wall.y2 - client.y);
+            var rotCoords1 = rotato(wall.x1 - client.x, wall.y1 - client.y, theta);
+            var rotCoords2 = rotato(wall.x2 - client.x, wall.y2 - client.y, theta);
             ctx.beginPath();
             ctx.moveTo(
                 rotCoords1[0] + scrC[0],
@@ -100,8 +98,8 @@
 
         for(var i = 0; i < data.hook.length; i++){ //wall hook loop
             var hook = data.hook[i];
-            var rotCoords1 = rotato(hook.x1 - client.x, hook.y1 - client.y);
-            var rotCoords2 = rotato(hook.x2 - client.x, hook.y2 - client.y);
+            var rotCoords1 = rotato(hook.x1 - client.x, hook.y1 - client.y, theta);
+            var rotCoords2 = rotato(hook.x2 - client.x, hook.y2 - client.y, theta);
             ctx.beginPath();
             ctx.moveTo(
                 rotCoords1[0] + scrC[0],
@@ -157,9 +155,8 @@
     }
 
     document.onmousemove = function(event){ //Mouse Move Detector
-        var x = event.clientX - 1200/2;
-        var y = event.clientY - 625/2;
-        var angle = Math.atan2(y,x);
-        socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
+        var mouseCoords = rotato(event.clientX - scrC[0], event.clientY - scrC[1], 2 * Math.PI - theta);
+        console.log(mouseCoords);
+        socket.emit('keyPress',{inputId:'mouseCoords',state:mouseCoords});
     }
 </script>

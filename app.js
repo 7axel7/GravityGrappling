@@ -161,7 +161,7 @@ var Player = function(id){
 	self.pressingSpace = false;
 	self.pressingLeftClick = false;
 	self.grapplePress = false;
-	self.mouseAngle = 0;
+	self.mouseCoords = [];
 	self.spdLim = 6;
 	self.rad = 10;
 	self.jumpheight = 5;
@@ -250,7 +250,8 @@ var Player = function(id){
     		self.grappley = self.y;
 
     		if(self.grapplePress){ // if player is pressing grapple button
-    			self.grappleDir = self.mouseAngle;
+    			var mouseAng = polarize(self.mouseCoords[0] - 5, self.mouseCoords[1] - 5);
+    			self.grappleDir = mouseAng[1];
     			self.grappleState = 1;
     		}
     	}
@@ -340,8 +341,8 @@ Player.onConnect = function(socket){
 			player.pressingSpace = data.state;
 		else if(data.inputId === 'lClick')
 			player.pressingLeftClick = data.state;
-		else if(data.inputId === 'mouseAngle')
-			player.mouseAngle = data.state;
+		else if(data.inputId === 'mouseCoords')
+			player.mouseCoords = data.state;
 		else if(data.inputId === 'grapple')
 			player.grapplePress = data.state;
 	});
