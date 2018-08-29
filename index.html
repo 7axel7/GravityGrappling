@@ -157,8 +157,8 @@
     }
 
     document.onmousemove = function(event){ //Mouse Move Detector
-        var x = event.clientX - 1200/2;
-        var y = event.clientY - 625/2;
+        var x = event.clientX - 5 - 1200/2 ;
+        var y = event.clientY - 5 - 675/2 ;
         var angle = Math.atan2(y,x);
         socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
     }

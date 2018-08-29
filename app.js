@@ -160,7 +160,7 @@ var Player = function(id){
 	self.pressingDown = false;
 	self.pressingSpace = false;
 	self.pressingLeftClick = false;
-	self.grapplePress = false;
+	self.pressingGrapple = false;
 	self.mouseAngle = 0;
 	self.spdLim = 6;
 	self.rad = 10;
@@ -168,7 +168,8 @@ var Player = function(id){
 	self.grapplex = 0;
 	self.grappley = 0;
 	self.grappleDir = 0;
-	self.grappleLen = 500;
+	self.grappleStartLen = 500;
+	self.grappleLen = 0;
 	self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
 	self.camAngle = 0;
 	self.moveSpd = 1;
@@ -196,7 +197,7 @@ var Player = function(id){
     	if(self.pressingRight){
     		if (self.touching.length >= 1){
     			var rMov = []; //di force towards right
-    			rMov = depolarize(ms, (self.camAngle + Math.PI*2)%(2*Math.PI)); //takes camera angle and adds 1/2 pi (90 degrees), modulo for sanitation
+    			rMov = depolarize(ms, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
     			self.spdX += rMov[0];
     			self.spdY += rMov[1];
     		}
@@ -214,7 +215,7 @@ var Player = function(id){
     	if(self.pressingDown){ //note!!! maybe remove vertical DI in future????
     		if (self.touching.length >= 1){
     			var dMov = []; 
-    			dMov = depolarize(ms, (self.camAngle + Math.PI/2)%(2*Math.PI)); //+ math.PI = +180 degrees
+    			dMov = depolarize(ms, (self.camAngle + Math.PI/2)%(2*Math.PI)); //takes camera angle and adds 1/2 pi (90 degrees), modulo for sanitation
     			self.spdX += dMov[0];
     			self.spdY += dMov[1];
     		}
@@ -249,7 +250,8 @@ var Player = function(id){
     		self.grapplex = self.x;
     		self.grappley = self.y;
 
-    		if(self.grapplePress){ // if player is pressing grapple button
+    		if(self.pressingGrapple){ // if player is pressing grapple button
+    			self.grappleLen = self.grappleStartLen;
     			self.grappleDir = self.mouseAngle;
     			self.grappleState = 1;
     		}
@@ -304,6 +306,24 @@ var Player = function(id){
 				self.spdY += bumpSpd[1];
 				//console.log(ang, self.x, self.y, bumpOut);	
     		}
+    		if (self.pressingRight){
+    			var rMov = []; //di force towards right
+    			rMov = depolarize(0.1, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
+    			self.spdX += rMov[0];
+    			self.spdY += rMov[1];
+    		}
+    		if (self.pressingLeft){
+    			var rMov = []; //di force towards right
+    			rMov = depolarize(0.1, (self.camAngle + Math.PI)%(2*Math.PI)); //+ math.PI = +180 degrees
+    			self.spdX += rMov[0];
+    			self.spdY += rMov[1];
+    		}
+    		if(self.pressingUp && self.grappleLen>5){
+    			self.grappleLen-=3;
+    		}
+    		if(self.pressingDown && self.grappleLen<500){
+    			self.grappleLen+=3;
+    		}
 		}
     	if(self.grappleState != 0){ //grapple is not off
     		if(self.pressingSpace){ // press space to bring it back
@@ -343,7 +363,7 @@ Player.onConnect = function(socket){
 		else if(data.inputId === 'mouseAngle')
 			player.mouseAngle = data.state;
 		else if(data.inputId === 'grapple')
-			player.grapplePress = data.state;
+			player.pressingGrapple = data.state;
 	});
 }
 
