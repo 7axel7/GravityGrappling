@@ -156,7 +156,7 @@
 
     document.onmousemove = function(event){ //Mouse Move Detector
         var mouseCoords = rotato(event.clientX - scrC[0], event.clientY - scrC[1], 2 * Math.PI - theta);
-        console.log(mouseCoords);
+        //console.log(mouseCoords);
         socket.emit('keyPress',{inputId:'mouseCoords',state:mouseCoords});
 
     }

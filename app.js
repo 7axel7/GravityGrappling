@@ -267,27 +267,47 @@ var Player = function(id){
 				var wall = Wall.list[i]; //loop through all walls
 				if (Math.sqrt(Math.pow(wall.midx - self.grapplex, 2) + 
 					Math.pow(wall.midy - self.grappley, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-					var newX = self.grapplex + 10*Math.cos(self.grappleDir);
-					var newY = self.grappley + 10*Math.sin(self.grappleDir);
-					var a = (self.grapplex * newY - self.grappley * newX);
-					var b = (wall.x1 * wall.y2 - wall.y1 * wall.x2);
-					var cx = (self.grapplex - newX);
-					var dx = (wall.x1 - wall.x2);
-					var cy = (self.grappley - newY);
-					var dy = (wall.y1 - wall.y2);
-					var px = (a * dx - cx * b) / (cx * dy - cy * dx);
-					var py = (a * dy - cy * b) / (cx * dy - cy * dx);
-					if (Math.min(wall.x1, wall.x2) < px &&
-						Math.max(wall.x1, wall.x2) > px &&
-						Math.min(wall.y1, wall.y2) < py &&
-						Math.max(wall.y1, wall.y2) > py &&
-						Math.min(self.grapplex, newX) < px &&
-						Math.max(self.grapplex, newX) > px &&
-						Math.min(self.grappley, newY) < py &&
-						Math.max(self.grappley, newY) > py){
-						self.grappleState = 2;
-						self.grapplex = px;
-						self.grappley = py;
+					if(wall.x1 == wall.x2){ //vertical wall
+						if (Math.min(wall.y1, wall.y2)-5 < self.grappley &&
+							Math.max(wall.y1, wall.y2)+5 > self.grappley &&
+							Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
+							Math.max(wall.x1, wall.x2)+5 > self.grapplex){
+							self.grappleState = 2;
+							self.grapplex = wall.x1;
+						}
+					}
+					else if(wall.y1 == wall.y2){ //horizontal wall
+						if (Math.min(wall.y1, wall.y2)-5 < self.grappley &&
+							Math.max(wall.y1, wall.y2)+5 > self.grappley &&
+							Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
+							Math.max(wall.x1, wall.x2)+5 > self.grapplex){
+							self.grappleState = 2;
+							self.grappley = wall.y1;
+						}
+					}
+					else {
+						var newX = self.grapplex + 10*Math.cos(self.grappleDir);
+						var newY = self.grappley + 10*Math.sin(self.grappleDir);
+						var a = (self.grapplex * newY - self.grappley * newX);
+						var b = (wall.x1 * wall.y2 - wall.y1 * wall.x2);
+						var cx = (self.grapplex - newX);
+						var dx = (wall.x1 - wall.x2);
+						var cy = (self.grappley - newY);
+						var dy = (wall.y1 - wall.y2);
+						var px = (a * dx - cx * b) / (cx * dy - cy * dx);
+						var py = (a * dy - cy * b) / (cx * dy - cy * dx);
+						if (Math.min(wall.x1, wall.x2) < px &&
+							Math.max(wall.x1, wall.x2) > px &&
+							Math.min(wall.y1, wall.y2) < py &&
+							Math.max(wall.y1, wall.y2) > py &&
+							Math.min(self.grapplex, newX) < px &&
+							Math.max(self.grapplex, newX) > px &&
+							Math.min(self.grappley, newY) < py &&
+							Math.max(self.grappley, newY) > py){
+							self.grappleState = 2;
+							self.grapplex = px;
+							self.grappley = py;
+						}
 					}
 				}
 			}
