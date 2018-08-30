@@ -257,8 +257,8 @@ var Player = function(id){
     		if(self.pressingGrapple){ // if player is pressing grapple button
     			self.grappleLen = self.grappleStartLen;
     			self.grappleDir = self.mouseAngle;
+    			self.grapplePoints = [];
     			self.grappleState = 1;
-    			self.grapplePoints = []; 
     		}
     	}
     	if(self.grappleState == 1){ //grapple is midair
@@ -290,15 +290,31 @@ var Player = function(id){
 						Math.max(self.grapplex, newX) > px &&
 						Math.min(self.grappley, newY) < py &&
 						Math.max(self.grappley, newY) > py){
-						self.grappleState = 2;
+						self.grapplePoints.push([px,py]);
 						self.grapplex = px;
 						self.grappley = py;
-						self.grapplePoints.push([px,py]);
+						self.grappleState = 2;
 					}
 				}
 			}
 		}	
 		if(self.grappleState == 2){
+			for(var i in cornerList){
+				var p = [];
+				var a = [];
+				var b = [];
+				var c = [];
+				var p = cornerList[i];
+				var a = self.grapplePoints.slice(-1)[0];
+				var b = self.grapplePositions[0];
+				var c = self.grapplePositions[1];
+				var w1 = (a[0]*(c[1]-a[1])-p[0]*(c[1]-a[1])+(p[1]-a[1])*(c[0]-a[0]))/((b[1]-a[1])*(c[0]-a[0])-(b[0]-a[0])*(c[1]-a[1]));
+				var w2 = (p[1]-a[1]-w1*(b[1]-a[1]))/(c[1]-a[1]);
+				if (w1>=0 && w2>=0 && w1+w2<=1){
+					console.log("Rope split time");
+				}
+			}
+
     		if(grappleDist[0] > self.grappleLen){
     			var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
 				var pVec = polarize(self.spdX, self.spdY)
@@ -456,6 +472,8 @@ Player.hookupdate = function(){
 	return pack;
 }
 
+
+
 var mapRead = function(){ //reads map and makes walls according to it
 	fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the content of map.txt and returns it as a string
 		if (err){
@@ -466,9 +484,17 @@ var mapRead = function(){ //reads map and makes walls according to it
 		for (i in map){ // loop through all lines
 			var wCoords = map[i].split(" "); //split strings into separate coords
 			var wInit = new Wall(wCoords, i); //makes new wall
+			if (!cornerList.includes([parseInt(wCoords[0]),parseInt(wCoords[1])])){
+				cornerList.push([parseInt(wCoords[0]),parseInt(wCoords[1])]);
+			}
+			if (!cornerList.includes([parseInt(wCoords[2]),parseInt(wCoords[3])])){
+				cornerList.push([parseInt(wCoords[2]),parseInt(wCoords[3])]);
+			}
 		}
 	});
 }
+
+var cornerList = [];
 
 mapRead();
 
