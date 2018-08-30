@@ -173,6 +173,8 @@ var Player = function(id){
 	self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
 	self.camAngle = 0;
 	self.moveSpd = 1;
+	self.grapplePoints = [];
+	self.grapplePositions = [[self.x,self.y],[self.x,self.y]];
 
 	var super_update = self.update;
 
@@ -245,6 +247,8 @@ var Player = function(id){
     }
 
     self.updateGrapple = function(){
+    	self.grapplePositions.shift();
+    	self.grapplePositions.push([self.x,self.y]);
     	var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
     	if(self.grappleState == 0){ //grapple is off
     		self.grapplex = self.x;
@@ -254,6 +258,7 @@ var Player = function(id){
     			self.grappleLen = self.grappleStartLen;
     			self.grappleDir = self.mouseAngle;
     			self.grappleState = 1;
+    			self.grapplePoints = []; 
     		}
     	}
     	if(self.grappleState == 1){ //grapple is midair
@@ -288,6 +293,7 @@ var Player = function(id){
 						self.grappleState = 2;
 						self.grapplex = px;
 						self.grappley = py;
+						self.grapplePoints.push([px,py]);
 					}
 				}
 			}
