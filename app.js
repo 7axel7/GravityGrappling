@@ -135,13 +135,11 @@ var Player = function(id){
 	self.grapplex = 0;
 	self.grappley = 0;
 	self.grappleDir = 0;
-	self.grappleLenMax = 500;
+	self.grappleStartLen = 500;
 	self.grappleLen = 0;
-	self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
-	self.camAngle = 0;
-	self.moveSpd = 1;
-	self.grapplePoints = [];
-	self.grapplePositions = [[self.x,self.y],[self.x,self.y]];
+self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
+self.camAngle = 0;
+self.moveSpd = 1;
 
 var super_update = self.update;
 
@@ -213,40 +211,38 @@ self.updateSpd = function(){
     }
 }
 
-	self.updateGrapple = function(){
-   self.grapplePositions.shift();
-   self.grapplePositions.push([self.x,self.y]);
-   var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
-   if(self.grappleState == 0){ //grapple is off
-    	self.grapplex = self.x;
-    	self.grappley = self.y;
-    	self.grapplePoints = [];
-    	self.grappleLenMax = 500;
-    	if(self.pressingGrapple){ // if player is pressing grapple button
-    			self.grappleLen = self.grappleLenMax;
-    			self.grappleDir = self.mouseAngle;
-    			self.grappleState = 1;
-    	}
-   }
-   if(self.grappleState == 1){ //grapple is midair
-    	self.grapplex += 10*Math.cos(self.grappleDir);
-    	self.grappley += 10*Math.sin(self.grappleDir);
-    	if(grappleDist[0] > self.grappleLenMax){ //
-    		self.grappleState = 0
-    	}
-  		for(var i in Wall.list){
-				var wall = Wall.list[i]; //loop through all walls
-				if (Math.sqrt(Math.pow(wall.midx - self.grapplex, 2) + 
-					Math.pow(wall.midy - self.grappley, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-					if(wall.x1 == wall.x2){ //vertical wall
-						if (Math.min(wall.y1, wall.y2)-5 < self.grappley &&
-							Math.max(wall.y1, wall.y2)+5 > self.grappley &&
-							Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
-							Math.max(wall.x1, wall.x2)+5 > self.grapplex){
-							self.grappleState = 2;
-						self.grapplex = wall.x1;
-					}
+self.updateGrapple = function(){
+	var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
+	if(self.grappleState == 0){ //grapple is off
+		self.grapplex = self.x;
+		self.grappley = self.y;
+		if(self.pressingGrapple){ // if player is pressing grapple button
+			self.grappleLen = self.grappleStartLen;
+			var mouseAng = polarize(self.mouseCoords[0] - 5, self.mouseCoords[1] - 5);
+			self.grappleDir = mouseAng[1];
+			self.grappleState = 1;
+		}
+	}
+	if(self.grappleState == 1){ //grapple is midair
+		self.grapplex += 10*Math.cos(self.grappleDir);
+		self.grappley += 10*Math.sin(self.grappleDir);
+		if(grappleDist[0] > self.grappleLen){ //
+			self.grappleState = 0
+		}
+
+		for(var i in Wall.list){
+			var wall = Wall.list[i]; //loop through all walls
+			if (Math.sqrt(Math.pow(wall.midx - self.grapplex, 2) + 
+				Math.pow(wall.midy - self.grappley, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
+				if(wall.x1 == wall.x2){ //vertical wall
+					if (Math.min(wall.y1, wall.y2)-5 < self.grappley &&
+						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
+						Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
+						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
+						self.grappleState = 2;
+					self.grapplex = wall.x1;
 				}
+			}
 				else if(wall.y1 == wall.y2){ //horizontal wall
 					if (Math.min(wall.y1, wall.y2)-5 < self.grappley &&
 						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
@@ -254,85 +250,31 @@ self.updateSpd = function(){
 						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
 						self.grappleState = 2;
 					self.grappley = wall.y1;
-					}
 				}
-				else {
-					var newX = self.grapplex + 10*Math.cos(self.grappleDir);
-					var newY = self.grappley + 10*Math.sin(self.grappleDir);
-					var a = (self.grapplex * newY - self.grappley * newX);
-					var b = (wall.x1 * wall.y2 - wall.y1 * wall.x2);
-					var cx = (self.grapplex - newX);
-					var dx = (wall.x1 - wall.x2);
-					var cy = (self.grappley - newY);
-					var dy = (wall.y1 - wall.y2);
-					var px = (a * dx - cx * b) / (cx * dy - cy * dx);
-					var py = (a * dy - cy * b) / (cx * dy - cy * dx);
-					if (Math.min(wall.x1, wall.x2) < px &&
-						Math.max(wall.x1, wall.x2) > px &&
-						Math.min(wall.y1, wall.y2) < py &&
-						Math.max(wall.y1, wall.y2) > py &&
-						Math.min(self.grapplex, newX) < px &&
-						Math.max(self.grapplex, newX) > px &&
-						Math.min(self.grappley, newY) < py &&
-						Math.max(self.grappley, newY) > py){
-						self.grappleState = 2;
-						self.grapplex = px;
-						self.grappley = py;
-					}
-				}
-			}	
-			if(self.grappleState == 2){
-				for(var i in cornerList){
-					var p = [];
-					var a = [];
-					var b = [];
-					var c = [];
-					var w1 = 0;
-					var w2 = 0;
-					var p = cornerList[i];
-					var a = self.grapplePoints.slice(-1)[0];
-					var b = self.grapplePositions[0];
-					var c = self.grapplePositions[1];
-					var w1 = (a[0]*(c[1]-a[1])-p[0]*(c[1]-a[1])+(p[1]-a[1])*(c[0]-a[0]))/((b[1]-a[1])*(c[0]-a[0])-(b[0]-a[0])*(c[1]-a[1]));
-					var w2 = (p[1]-a[1]-w1*(b[1]-a[1]))/(c[1]-a[1]);
-					if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
-						self.grappleLenMax -= Math.sqrt((Math.abs(p[0]-a[0])+Math.abs(p[1]-a[1])));
-						self.grapplePoints.push(p);
-						self.grapplex = p[0];
-						self.grappley = p[1];
-					}
-				}
-    		if(grappleDist[0] > self.grappleLen){
-    			var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
-					var pVec = polarize(self.spdX, self.spdY)
-    			var angDiff = Math.abs(pVec[1] - ang); //take theta
-					var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-					var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force
-					var bumpOut = depolarize(grappleDist[0] - self.grappleLen, ang); //plus extra to push you out of the wall
-					self.x += bumpOut[0];
-					self.y += bumpOut[1];	
-					self.spdX += bumpSpd[0];
-					self.spdY += bumpSpd[1];
-					//console.log(ang, self.x, self.y, bumpOut);	
-				}
-    		if (self.pressingRight){
-    			var rMov = []; //di force towards right
-    			rMov = depolarize(0.1, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
-    			self.spdX += rMov[0];
-    			self.spdY += rMov[1];
-    		}
-    		if (self.pressingLeft){
-    			var rMov = []; //di force towards right
-    			rMov = depolarize(0.1, (self.camAngle + Math.PI)%(2*Math.PI)); //+ math.PI = +180 degrees
-    			self.spdX += rMov[0];
-    			self.spdY += rMov[1];
-    		}
-    		if(self.pressingUp && self.grappleLen>5){
-    			self.grappleLen-=3;
-    		}
-    		if(self.pressingDown && self.grappleLen<self.grappleLenMax){
-    			self.grappleLen+=3;
-    		}
+			}
+			else {
+				var newX = self.grapplex + 10*Math.cos(self.grappleDir);
+				var newY = self.grappley + 10*Math.sin(self.grappleDir);
+				var a = (self.grapplex * newY - self.grappley * newX);
+				var b = (wall.x1 * wall.y2 - wall.y1 * wall.x2);
+				var cx = (self.grapplex - newX);
+				var dx = (wall.x1 - wall.x2);
+				var cy = (self.grappley - newY);
+				var dy = (wall.y1 - wall.y2);
+				var px = (a * dx - cx * b) / (cx * dy - cy * dx);
+				var py = (a * dy - cy * b) / (cx * dy - cy * dx);
+				if (Math.min(wall.x1, wall.x2) < px &&
+					Math.max(wall.x1, wall.x2) > px &&
+					Math.min(wall.y1, wall.y2) < py &&
+					Math.max(wall.y1, wall.y2) > py &&
+					Math.min(self.grapplex, newX) < px &&
+					Math.max(self.grapplex, newX) > px &&
+					Math.min(self.grappley, newY) < py &&
+					Math.max(self.grappley, newY) > py){
+					self.grappleState = 2;
+				self.grapplex = px;
+				self.grappley = py;
+			}
 		}
 	}
 }
@@ -495,18 +437,6 @@ Player.hookupdate = function(){
 	return pack;
 }
 
-var mapRead = function(){ //reads map and makes walls according to it
-	fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the content of map.txt and returns it as a string
-		if (err){
-			return console.log(err);
-		}
-		//console.log(data);
-		var map = data.split("\n"); //split lines into separate strings
-		for (i in map){ // loop through all lines
-			var wCoords = map[i].split(" "); //split strings into separate coords
-			var wInit = new Wall(wCoords, i); //makes new wall
-			
-
 var rotato = function(x, y, rtheta){
     var r = [
     [Math.cos(rtheta), Math.sin(rtheta)],
@@ -528,24 +458,15 @@ fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the con
 	var mirrorNo = 4 //times to mirror map rotationally
 	for(i in map){
 		var wCoords = map[i].split(" "); //split strings into separate coords
-		if (!cornerList.includes([parseInt(wCoords[0]),parseInt(wCoords[1])])){
-				cornerList.push([parseInt(wCoords[0]),parseInt(wCoords[1])]);
-		}
-		if (!cornerList.includes([parseInt(wCoords[2]),parseInt(wCoords[3])])){
-				cornerList.push([parseInt(wCoords[2]),parseInt(wCoords[3])]);
-		}
 		for(p = 1; p <= mirrorNo; p++){ // loop through all lines
 			var p1 = rotato(wCoords[0], wCoords[1], p * 2 * Math.PI / mirrorNo);
 			var p2 = rotato(wCoords[2], wCoords[3], p * 2 * Math.PI / mirrorNo);
 			var rCoords = [p1[0],p1[1],p2[0],p2[1]];
 			var wInit = new Wall(rCoords, (i - 1)*mirrorNo + p); //makes new wall
-
 		}
 	}
 });
 }
-
-var cornerList = [];
 
 mapRead();
 
