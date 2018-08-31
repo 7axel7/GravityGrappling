@@ -131,7 +131,7 @@ var Player = function(id){
 	self.grapplex = 0;
 	self.grappley = 0;
 	self.grappleDir = 0;
-	self.grappleStartLen = 500;
+	self.grappleLenMax = 500;
 	self.grappleLen = 0;
 	self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
 	self.camAngle = 0;
@@ -210,8 +210,9 @@ var Player = function(id){
     }
 
     self.updateGrapple = function(){
-		self.grapplePositions.shift();
+    	self.grapplePositions.shift();
 		self.grapplePositions.push([self.x,self.y]);
+		
 		var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
 		if(self.grappleState == 0){ //grapple is off
 			self.grapplex = self.x;
@@ -222,6 +223,7 @@ var Player = function(id){
 				self.grappleLen = self.grappleLenMax;
 				self.grappleDir = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
 				self.grappleState = 1;
+				self.grapplePoints = [];
 			}
 		}
 		if(self.grappleState == 1){ //grapple is midair
@@ -271,30 +273,67 @@ var Player = function(id){
 							Math.max(self.grapplex, newX) > px &&
 							Math.min(self.grappley, newY) < py &&
 							Math.max(self.grappley, newY) > py){
+							
 							self.grapplePoints.push([px,py]);
 							self.grappleState = 2;
 							self.grapplex = px;
 							self.grappley = py;
+							
+							
 						}
 					}
 				}	
 			}
 		}
+
 		if(self.grappleState == 2){
-			for(var i in cornerList){
-				var p = cornerList[i];
-				var a = self.grapplePoints.slice(-1)[0];
-				var b = self.grapplePositions[0];
-				var c = self.grapplePositions[1];
-				var w1 = (a[0]*(c[1]-a[1])-p[0]*(c[1]-a[1])+(p[1]-a[1])*(c[0]-a[0]))/((b[1]-a[1])*(c[0]-a[0])-(b[0]-a[0])*(c[1]-a[1]));
-				var w2 = (p[1]-a[1]-w1*(b[1]-a[1]))/(c[1]-a[1]);
-				if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
-					self.grappleLenMax -= Math.sqrt((Math.abs(p[0]-a[0])+Math.abs(p[1]-a[1])));
-					self.grapplePoints.push(p);
-					self.grapplex = p[0];
-					self.grappley = p[1];
+			if(self.grappleLen > self.grappleLenMax){
+				self.grappleLen = self.grappleLenMax;
+			}
+			
+
+			
+			for(var i in self.grapplePoints){
+				if(self.grapplePoints.length>=2){
+					var q = self.grapplePoints.slice(-2)[0];
+					var o = self.grapplePoints.slice(-1)[0];
+					var a = self.grapplePositions[0];
+					var b = self.grapplePositions[1];
+					var vQO = [o[0]-q[0],o[1]-q[1]];
+					var vOA = [a[0]-o[0],a[1]-o[1]];
+					var vOB = [b[0]-o[0],b[1]-o[1]];
+
+					if(Math.sign(vQO[0]*vOA[1]-vQO[1]*vOA[0]) != Math.sign(vQO[0]*vOB[1]-vQO[1]*vOB[0])){
+						console.log('unwrap');
+						
+						self.grappleLenMax += o[2];
+						self.grapplex = self.grapplePoints.slice(-2)[0][0];
+						self.grappley = self.grapplePoints.slice(-2)[0][1];
+						self.grapplePoints.pop();
+						
+					}
 				}
 			}
+			for(var i in cornerList){
+				var o = self.grapplePoints.slice(-1)[0];
+				var a = self.grapplePositions[0];
+				var b = self.grapplePositions[1];
+				var p = cornerList[i];
+				var w1 = (o[0]*(b[1]-o[1])-p[0]*(b[1]-o[1])+(p[1]-o[1])*(b[0]-o[0]))/((a[1]-o[1])*(b[0]-o[0])-(a[0]-o[0])*(b[1]-o[1]));
+				var w2 = (p[1]-o[1]-w1*(a[1]-o[1]))/(b[1]-o[1]);
+				if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
+					p[2] = Math.sqrt(((p[0]-o[0])*(p[0]-o[0])+(p[1]-o[1])*(p[1]-o[1])));//records length of the wrapped-around segment
+					
+					if(self.grapplePoints.slice(-1)[0].toString() != p.toString()){
+						self.grappleLenMax -= p[2];
+						self.grapplePoints.push(p);
+						self.grapplex = p[0];
+						self.grappley = p[1];
+
+					}
+				}		
+			}
+			
 			if(grappleDist[0] > self.grappleLen){
 				var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
 				var pVec = polarize(self.spdX, self.spdY)
@@ -329,6 +368,7 @@ var Player = function(id){
 		}
 		if(self.grappleState != 0){ //grapple is not off
 			if(self.pressingSpace){ // press space to bring it back
+				console.log(self.grapplePoints);
 				self.grappleState = 0;
 			}
 		}
@@ -457,12 +497,13 @@ var rotato = function(x, y, rtheta){
     var r = [
     [Math.cos(rtheta), Math.sin(rtheta)],
     [-Math.sin(rtheta), Math.cos(rtheta)]
-    ]
+    ];
     var rX = r[0][0] * x + r[0][1] * y;
     var rY = r[1][0] * x + r[1][1] * y;
     return [rX, rY];
 //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
 }
+var cornerList = [];
 
 var mapRead = function(){ //reads map and makes walls according to it
 	fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the content of map.txt and returns it as a string
@@ -474,11 +515,23 @@ var mapRead = function(){ //reads map and makes walls according to it
 		var mirrorNo = 4; //times to mirror map rotationally
 		for(i in map){
 			var wCoords = map[i].split(" "); //split strings into separate coords
-			if (!cornerList.includes([parseInt(wCoords[0]),parseInt(wCoords[1])])){
-				cornerList.push([parseInt(wCoords[0]),parseInt(wCoords[1])]);
+			var p1 = [parseInt(wCoords[0]),parseInt(wCoords[1])];
+			var p2 = [parseInt(wCoords[2]),parseInt(wCoords[3])];
+			var copy1 = false;
+			var copy2 = false;
+			for(var i in cornerList){
+				if(p1.toString() == cornerList[i].toString()){
+					copy1 = true
+				}
+				if(p2.toString() == cornerList[i].toString()){
+					copy2 = true
+				}			
 			}
-			if (!cornerList.includes([parseInt(wCoords[2]),parseInt(wCoords[3])])){
-				cornerList.push([parseInt(wCoords[2]),parseInt(wCoords[3])]);
+			if(copy1 == false){
+				cornerList.push(p1);
+			}
+			if(copy2 == false){
+				cornerList.push(p2);
 			}
 			for(p = 1; p <= mirrorNo; p++){ // loop through all lines
 				var p1 = rotato(wCoords[0], wCoords[1], p * 2 * Math.PI / mirrorNo);
@@ -490,7 +543,7 @@ var mapRead = function(){ //reads map and makes walls according to it
 	});
 }
 
-var cornerList = [];
+
 
 mapRead();
 
