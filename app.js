@@ -83,8 +83,6 @@ var Entity = function(){
 				}
 			}
 		}
-
-	//console.log(self.touching);
 	} //find applicable walls and applies collision
 	self.applyFriction = function() {
 		if (self.touching.length >= 1){
@@ -133,7 +131,7 @@ var Player = function(id){
 	self.grapplex = 0;
 	self.grappley = 0;
 	self.grappleDir = 0;
-	self.grappleLenMax = 500;
+	self.grappleStartLen = 500;
 	self.grappleLen = 0;
 	self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
 	self.camAngle = 0;
@@ -405,8 +403,8 @@ var Terrain = function(id){
 	}
 	self.id = id;
 	return self;
-
 }
+
 
 var Wall = function(coords, id){
 	var self = Terrain();
@@ -456,13 +454,14 @@ Player.hookupdate = function(){
 }
 
 var rotato = function(x, y, rtheta){
-	var r = [
-	[Math.cos(rtheta), Math.sin(rtheta)],
-	[-Math.sin(rtheta), Math.cos(rtheta)]
-	];
-	var rX = r[0][0] * x + r[0][1] * y;
-	var rY = r[1][0] * x + r[1][1] * y;
-	return [rX, rY];
+    var r = [
+    [Math.cos(rtheta), Math.sin(rtheta)],
+    [-Math.sin(rtheta), Math.cos(rtheta)]
+    ]
+    var rX = r[0][0] * x + r[0][1] * y;
+    var rY = r[1][0] * x + r[1][1] * y;
+    return [rX, rY];
+//console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
 }
 
 var mapRead = function(){ //reads map and makes walls according to it
