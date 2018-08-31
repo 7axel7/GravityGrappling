@@ -168,7 +168,7 @@ var Player = function(id){
 	self.grapplex = 0;
 	self.grappley = 0;
 	self.grappleDir = 0;
-	self.grappleStartLen = 500;
+	self.grappleLenMax = 500;
 	self.grappleLen = 0;
 	self.grappleState = 0; //0 means off, 1 means mid-air, 2 means attached
 	self.camAngle = 0;
@@ -253,18 +253,19 @@ var Player = function(id){
     	if(self.grappleState == 0){ //grapple is off
     		self.grapplex = self.x;
     		self.grappley = self.y;
+    		self.grapplePoints = [];
+    		self.grappleLenMax = 500;
 
     		if(self.pressingGrapple){ // if player is pressing grapple button
-    			self.grappleLen = self.grappleStartLen;
+    			self.grappleLen = self.grappleLenMax;
     			self.grappleDir = self.mouseAngle;
-    			self.grapplePoints = [];
     			self.grappleState = 1;
     		}
     	}
     	if(self.grappleState == 1){ //grapple is midair
     		self.grapplex += 10*Math.cos(self.grappleDir);
     		self.grappley += 10*Math.sin(self.grappleDir);
-    		if(grappleDist[0] > self.grappleLen){ //
+    		if(grappleDist[0] > self.grappleLenMax){ //
     			self.grappleState = 0
     		}
 
@@ -304,14 +305,19 @@ var Player = function(id){
 				var a = [];
 				var b = [];
 				var c = [];
+				var w1 = 0;
+				var w2 = 0;
 				var p = cornerList[i];
 				var a = self.grapplePoints.slice(-1)[0];
 				var b = self.grapplePositions[0];
 				var c = self.grapplePositions[1];
 				var w1 = (a[0]*(c[1]-a[1])-p[0]*(c[1]-a[1])+(p[1]-a[1])*(c[0]-a[0]))/((b[1]-a[1])*(c[0]-a[0])-(b[0]-a[0])*(c[1]-a[1]));
 				var w2 = (p[1]-a[1]-w1*(b[1]-a[1]))/(c[1]-a[1]);
-				if (w1>=0 && w2>=0 && w1+w2<=1){
-					console.log("Rope split time");
+				if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
+					self.grappleLenMax -= Math.sqrt((abs(p[0]-a[0])+abs(p[1]-a[1])));
+					self.grapplePoints.push(p);
+					self.grapplex = p[0];
+					self.grappley = p[1];
 				}
 			}
 
@@ -343,7 +349,7 @@ var Player = function(id){
     		if(self.pressingUp && self.grappleLen>5){
     			self.grappleLen-=3;
     		}
-    		if(self.pressingDown && self.grappleLen<500){
+    		if(self.pressingDown && self.grappleLen<self.grappleLenMax){
     			self.grappleLen+=3;
     		}
 		}
