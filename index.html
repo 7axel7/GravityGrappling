@@ -4,160 +4,160 @@
 <script src="https://cdn.socket.io/socket.io-1.4.5.js">
 </script>
 <script>
-	var socket = io(); //Connect to server
-	var c = document.getElementById("myCanvas"); //Creates canvas
-	var ctx = c.getContext("2d");
-    var scrC = [1200/2, 675/2];
-    var client;
-    var theta;
+var socket = io(); //Connect to server
+var c = document.getElementById("myCanvas"); //Creates canvas
+var ctx = c.getContext("2d");
+var scrC = [1200/2, 675/2];
+var client;
+var theta;
 
-    var rotato = function(x, y, thetaa){
-        var r = [
-            [Math.cos(thetaa), Math.sin(thetaa)],
-            [-Math.sin(thetaa), Math.cos(thetaa)]
-        ]
-        var rX = r[0][0] * x + r[0][1] * y;
-        var rY = r[1][0] * x + r[1][1] * y;
-        return [rX, rY];
-        //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
-    }
-	socket.on('newPositions',function(data, clientId){ //listens for newPositions
-        ctx.clearRect(0,0,1200,675);
-        
-        for(var i = 0; i < data.player.length; i++){ 
-            var player = data.player[i];
-            //console.log(player.number, clientId);
-            if (player.pId == clientId){
-                client = data.player[i];
-                theta = data.player[i].rot;
-            } //set var client
-        }
+var rotato = function(x, y, thetaa){
+    var r = [
+    [Math.cos(thetaa), Math.sin(thetaa)],
+    [-Math.sin(thetaa), Math.cos(thetaa)]
+    ]
+    var rX = r[0][0] * x + r[0][1] * y;
+    var rY = r[1][0] * x + r[1][1] * y;
+    return [rX, rY];
+//console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
+}
+socket.on('newPositions',function(data, clientId){ //listens for newPositions
+    ctx.clearRect(0,0,1200,675);
 
-        //console.log(rotato(100, 100), theta);
+    for(var i = 0; i < data.player.length; i++){ 
+        var player = data.player[i];
+//console.log(player.number, clientId);
+if (player.pId == clientId){
+    client = data.player[i];
+    theta = data.player[i].rot;
+} //set var client
+}
 
-		for(var i = 0; i < data.player.length; i++){ //player draw loop
-            var player = data.player[i];
+//console.log(rotato(100, 100), theta);
 
-            if (player.pId == clientId){
-                ctx.fillText(player.number,scrC[0], scrC[1]);
-                ctx.beginPath();
-                ctx.arc(scrC[0],scrC[1],10, 0, Math.PI*2);
-                ctx.stroke();
-                ctx.strokeStyle = "#55CCFF";
-                ctx.beginPath();
-                ctx.moveTo(scrC[0],scrC[1]);
-                var RSpd = [];
-                RSpd = rotato(player.spdX, player.spdY);
-                ctx.lineTo(scrC[0] + RSpd[0], scrC[1] + RSpd[1]);
-                ctx.stroke();
-                ctx.strokeStyle = "#000000"
-            } //if player is the client, draw them in the center
-            else {
-                var rotCoords = rotato(player.x - client.x, player.y - client.y, theta);
-                //console.log(player.number,player.x,player.y);
-                ctx.fillText(
-                    player.number,
-                    rotCoords[0] + scrC[0],
-                    rotCoords[1] + scrC[1]
-                    );
-                ctx.beginPath();
-                ctx.arc(
-                    rotCoords[0] + scrC[0],
-                    rotCoords[1] + scrC[1],
-                    10, 0, Math.PI*2);
-                ctx.stroke();
-            }
-        };
+for(var i = 0; i < data.player.length; i++){ //player draw loop
+    var player = data.player[i];
+
+    if (player.pId == clientId){
+        ctx.fillText(player.number,scrC[0], scrC[1]);
+        ctx.beginPath();
+        ctx.arc(scrC[0],scrC[1],10, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.strokeStyle = "#55CCFF";
+        ctx.beginPath();
+        ctx.moveTo(scrC[0],scrC[1]);
+        var RSpd = [];
+        RSpd = rotato(player.spdX, player.spdY);
+        ctx.lineTo(scrC[0] + RSpd[0], scrC[1] + RSpd[1]);
+        ctx.stroke();
+        ctx.strokeStyle = "#000000"
+} //if player is the client, draw them in the center
+else {
+    var rotCoords = rotato(player.x - client.x, player.y - client.y, theta);
+//console.log(player.number,player.x,player.y);
+ctx.fillText(
+    player.number,
+    rotCoords[0] + scrC[0],
+    rotCoords[1] + scrC[1]
+    );
+ctx.beginPath();
+ctx.arc(
+    rotCoords[0] + scrC[0],
+    rotCoords[1] + scrC[1],
+    10, 0, Math.PI*2);
+ctx.stroke();
+}
+};
 /*
-        for(var i = 0; i < data.block.length; i++){ //block draw loop
-            var block = data.block[i];
-            ctx.fillRect(
-                block.x1 - client.x + scrC[0], 
-                //moves all blocks according to client's pos
-                block.y1 - client.y + scrC[1],
-                block.x2,
-                block.y2
-                );
-        };
+for(var i = 0; i < data.block.length; i++){ //block draw loop
+var block = data.block[i];
+ctx.fillRect(
+block.x1 - client.x + scrC[0], 
+//moves all blocks according to client's pos
+block.y1 - client.y + scrC[1],
+block.x2,
+block.y2
+);
+};
 */
-        for(var i = 0; i < data.wall.length; i++){ //wall draw loop
-            var wall = data.wall[i];
-            var rotCoords1 = rotato(wall.x1 - client.x, wall.y1 - client.y, theta);
-            var rotCoords2 = rotato(wall.x2 - client.x, wall.y2 - client.y, theta);
-            ctx.beginPath();
-            ctx.moveTo(
-                rotCoords1[0] + scrC[0],
-                rotCoords1[1] + scrC[1]);
-                //console.log(wall.x1, wall.y1);
-            ctx.lineTo(
-                rotCoords2[0] + scrC[0],
-                rotCoords2[1] + scrC[1]);
-                //console.log(wall.x2, wall.x2);
-            ctx.stroke();
-        }
+for(var i = 0; i < data.wall.length; i++){ //wall draw loop
+    var wall = data.wall[i];
+    var rotCoords1 = rotato(wall.x1 - client.x, wall.y1 - client.y, theta);
+    var rotCoords2 = rotato(wall.x2 - client.x, wall.y2 - client.y, theta);
+    ctx.beginPath();
+    ctx.moveTo(
+        rotCoords1[0] + scrC[0],
+        rotCoords1[1] + scrC[1]);
+//console.log(wall.x1, wall.y1);
+ctx.lineTo(
+    rotCoords2[0] + scrC[0],
+    rotCoords2[1] + scrC[1]);
+//console.log(wall.x2, wall.x2);
+ctx.stroke();
+}
 
-        for(var i = 0; i < data.hook.length; i++){ //wall hook loop
-            var hook = data.hook[i];
-            var rotCoords1 = rotato(hook.x1 - client.x, hook.y1 - client.y, theta);
-            var rotCoords2 = rotato(hook.x2 - client.x, hook.y2 - client.y, theta);
-            ctx.beginPath();
-            ctx.moveTo(
-                rotCoords1[0] + scrC[0],
-                rotCoords1[1] + scrC[1]);
-                //console.log(wall.x1, wall.y1);
-            ctx.lineTo(
-                rotCoords2[0] + scrC[0],
-                rotCoords2[1] + scrC[1]);
-                //console.log(wall.x2, wall.x2);
-            ctx.stroke();
-        }
-    });
+for(var i = 0; i < data.hook.length; i++){ //wall hook loop
+    var hook = data.hook[i];
+    var rotCoords1 = rotato(hook.x1 - client.x, hook.y1 - client.y, theta);
+    var rotCoords2 = rotato(hook.x2 - client.x, hook.y2 - client.y, theta);
+    ctx.beginPath();
+    ctx.moveTo(
+        rotCoords1[0] + scrC[0],
+        rotCoords1[1] + scrC[1]);
+//console.log(wall.x1, wall.y1);
+ctx.lineTo(
+    rotCoords2[0] + scrC[0],
+    rotCoords2[1] + scrC[1]);
+//console.log(wall.x2, wall.x2);
+ctx.stroke();
+}
+});
 
-    //socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
+//socket.emit('happy',{reason:'its my birthday'}); //Sends message happy with data its my birthday
 
-	document.onkeydown = function(event){ //Key Down Detector
-        if(event.keyCode === 68)      //d
-            socket.emit('keyPress',{inputId:'right',state:true});
-        else if(event.keyCode === 83) //s
-            socket.emit('keyPress',{inputId:'down',state:true});
-        else if(event.keyCode === 65) //a
-            socket.emit('keyPress',{inputId:'left',state:true});
-        else if(event.keyCode === 87) //w
-            socket.emit('keyPress',{inputId:'up',state:true});
-        else if(event.keyCode === 32) //space
-            socket.emit('keyPress',{inputId:'space',state:true});
-        else if(event.keyCode === 69) //e
-            socket.emit('keyPress',{inputId:'grapple',state:true});
+document.onkeydown = function(event){ //Key Down Detector
+if(event.keyCode === 68)      //d
+    socket.emit('keyPress',{inputId:'right',state:true});
+else if(event.keyCode === 83) //s
+    socket.emit('keyPress',{inputId:'down',state:true});
+else if(event.keyCode === 65) //a
+    socket.emit('keyPress',{inputId:'left',state:true});
+else if(event.keyCode === 87) //w
+    socket.emit('keyPress',{inputId:'up',state:true});
+else if(event.keyCode === 32) //space
+    socket.emit('keyPress',{inputId:'space',state:true});
+else if(event.keyCode === 69) //e
+    socket.emit('keyPress',{inputId:'grapple',state:true});
 
-    }
+}
 
-    document.onkeyup = function(event){ // Key Up Detector
-        if(event.keyCode === 68)      //d
-            socket.emit('keyPress',{inputId:'right',state:false});
-        else if(event.keyCode === 83) //s
-            socket.emit('keyPress',{inputId:'down',state:false});
-        else if(event.keyCode === 65) //a
-            socket.emit('keyPress',{inputId:'left',state:false});
-        else if(event.keyCode === 87) //w
-            socket.emit('keyPress',{inputId:'up',state:false});
-        else if(event.keyCode === 32) //space
-            socket.emit('keyPress',{inputId:'space',state:false});
-        else if(event.keyCode === 69) //e
-            socket.emit('keyPress',{inputId:'grapple',state:false});
-    }
+document.onkeyup = function(event){ // Key Up Detector
+if(event.keyCode === 68)      //d
+    socket.emit('keyPress',{inputId:'right',state:false});
+else if(event.keyCode === 83) //s
+    socket.emit('keyPress',{inputId:'down',state:false});
+else if(event.keyCode === 65) //a
+    socket.emit('keyPress',{inputId:'left',state:false});
+else if(event.keyCode === 87) //w
+    socket.emit('keyPress',{inputId:'up',state:false});
+else if(event.keyCode === 32) //space
+    socket.emit('keyPress',{inputId:'space',state:false});
+else if(event.keyCode === 69) //e
+    socket.emit('keyPress',{inputId:'grapple',state:false});
+}
 
-    document.onmousedown = function(event){ //Mouse Down Detector
-    	socket.emit('keyPress',{inputId:'lClick',state:true});
-    }
+document.onmousedown = function(event){ //Mouse Down Detector
+    socket.emit('keyPress',{inputId:'lClick',state:true});
+}
 
-    document.onmouseup = function(event){ //Mouse Down Detector
-    	socket.emit('keyPress',{inputId:'lClick',state:false});
-    }
+document.onmouseup = function(event){ //Mouse Down Detector
+    socket.emit('keyPress',{inputId:'lClick',state:false});
+}
 
-    document.onmousemove = function(event){ //Mouse Move Detector
-        var mouseCoords = rotato(event.clientX - scrC[0], event.clientY - scrC[1], 2 * Math.PI - theta);
-        console.log(mouseCoords);
-        socket.emit('keyPress',{inputId:'mouseCoords',state:mouseCoords});
+document.onmousemove = function(event){ //Mouse Move Detector
+    var mouseCoords = rotato(event.clientX - scrC[0], event.clientY - scrC[1], 2 * Math.PI - theta);
+//console.log(mouseCoords);
+socket.emit('keyPress',{inputId:'mouseCoords',state:mouseCoords});
 
-    }
+}
 </script>
