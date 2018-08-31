@@ -314,7 +314,7 @@ var Player = function(id){
 				var w1 = (a[0]*(c[1]-a[1])-p[0]*(c[1]-a[1])+(p[1]-a[1])*(c[0]-a[0]))/((b[1]-a[1])*(c[0]-a[0])-(b[0]-a[0])*(c[1]-a[1]));
 				var w2 = (p[1]-a[1]-w1*(b[1]-a[1]))/(c[1]-a[1]);
 				if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
-					self.grappleLenMax -= Math.sqrt((abs(p[0]-a[0])+abs(p[1]-a[1])));
+					self.grappleLenMax -= Math.sqrt((Math.abs(p[0]-a[0])+Math.abs(p[1]-a[1])));
 					self.grapplePoints.push(p);
 					self.grapplex = p[0];
 					self.grappley = p[1];
