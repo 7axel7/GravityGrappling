@@ -455,7 +455,7 @@ fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the con
 	}
 	//console.log(data);
 	var map = data.split("\n"); //split lines into separate strings
-	var mirrorNo = 9 //times to mirror map rotationally
+	var mirrorNo = 4 //times to mirror map rotationally
 	for(i in map){
 		var wCoords = map[i].split(" "); //split strings into separate coords
 		for(p = 1; p <= mirrorNo; p++){ // loop through all lines
