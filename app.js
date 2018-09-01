@@ -137,7 +137,7 @@ var Player = function(id){
 	self.camAngle = 0;
 	self.moveSpd = 1;
 	self.grapplePoints = [];
-	self.grapplePositions = [[self.x,self.y],[self.x,self.y]];
+	self.posHist = [[0,0],[0,0]]; //position history [last frame],[this frame]
 
 	var super_update = self.update;
 
@@ -145,6 +145,8 @@ var Player = function(id){
 		self.updateGrapple();
 		self.updateSpd();
 		self.updatecamAngle();
+		self.posHist.shift();
+		self.posHist.push([self.x, self.y]);
 		super_update();
 	}
 
@@ -210,9 +212,7 @@ var Player = function(id){
     }
 
     self.updateGrapple = function(){
-    	self.grapplePositions.shift();
-		self.grapplePositions.push([self.x,self.y]);
-		
+ 
 		var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
 		if(self.grappleState == 0){ //grapple is off
 			self.grapplex = self.x;
@@ -241,8 +241,10 @@ var Player = function(id){
 						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
 						Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
 						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
+							self.grapplePoints.push([px,py]);
 							self.grappleState = 2;
 							self.grapplex = wall.x1;
+							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
 						}
 					}
 					else if(wall.y1 == wall.y2){ //horizontal wall
@@ -250,8 +252,10 @@ var Player = function(id){
 						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
 						Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
 						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
+							self.grapplePoints.push([px,py]);
 							self.grappleState = 2;
 							self.grappley = wall.y1;
+							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
 						}
 					}
 					else {
@@ -276,6 +280,7 @@ var Player = function(id){
 							
 							self.grapplePoints.push([px,py]);
 							self.grappleState = 2;
+							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0]; 
 							self.grapplex = px;
 							self.grappley = py;
 							
@@ -290,49 +295,56 @@ var Player = function(id){
 			if(self.grappleLen > self.grappleLenMax){
 				self.grappleLen = self.grappleLenMax;
 			}
+			console.log(self.grappleLen, self.grappleLenMax, grappleDist)
 			
+			var a = self.posHist[0]; //last frame position
+			var b = self.posHist[1]; //current position
+			var o = self.grapplePoints.slice(-1)[0]; //the current wrap point
+			var q = self.grapplePoints.slice(-2)[0];
+			var unwrapTF = false;
 
-			
-			for(var i in self.grapplePoints){
-				if(self.grapplePoints.length>=2){
-					var q = self.grapplePoints.slice(-2)[0];
-					var o = self.grapplePoints.slice(-1)[0];
-					var a = self.grapplePositions[0];
-					var b = self.grapplePositions[1];
+			var checkUnwrap = function(){
+				if (self.grapplePoints.length > 1){
 					var vQO = [o[0]-q[0],o[1]-q[1]];
 					var vOA = [a[0]-o[0],a[1]-o[1]];
 					var vOB = [b[0]-o[0],b[1]-o[1]];
-
 					if(Math.sign(vQO[0]*vOA[1]-vQO[1]*vOA[0]) != Math.sign(vQO[0]*vOB[1]-vQO[1]*vOB[0])){
-						console.log('unwrap');
-						
+						self.grappleLen += o[2];
 						self.grappleLenMax += o[2];
-						self.grapplex = self.grapplePoints.slice(-2)[0][0];
-						self.grappley = self.grapplePoints.slice(-2)[0][1];
 						self.grapplePoints.pop();
-						
+						o = self.grapplePoints.slice(-1)[0];
+						q = self.grapplePoints.slice(-2)[0];
+						checkUnwrap();
+						unwrapTF = true;
 					}
 				}
 			}
-			for(var i in cornerList){
-				var o = self.grapplePoints.slice(-1)[0];
-				var a = self.grapplePositions[0];
-				var b = self.grapplePositions[1];
-				var p = cornerList[i];
-				var w1 = (o[0]*(b[1]-o[1])-p[0]*(b[1]-o[1])+(p[1]-o[1])*(b[0]-o[0]))/((a[1]-o[1])*(b[0]-o[0])-(a[0]-o[0])*(b[1]-o[1]));
-				var w2 = (p[1]-o[1]-w1*(a[1]-o[1]))/(b[1]-o[1]);
-				if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
-					p[2] = Math.sqrt(((p[0]-o[0])*(p[0]-o[0])+(p[1]-o[1])*(p[1]-o[1])));//records length of the wrapped-around segment
-					
-					if(self.grapplePoints.slice(-1)[0].toString() != p.toString()){
-						self.grappleLenMax -= p[2];
-						self.grapplePoints.push(p);
-						self.grapplex = p[0];
-						self.grappley = p[1];
+			checkUnwrap();
+			if(!unwrapTF){
+				for(var i in cornerList){
+					var p = cornerList[i];
+					var w1 = (o[0]*(b[1]-o[1])-p[0]*(b[1]-o[1])+(p[1]-o[1])*(b[0]-o[0]))/((a[1]-o[1])*(b[0]-o[0])-(a[0]-o[0])*(b[1]-o[1]));
+					var w2 = (p[1]-o[1]-w1*(a[1]-o[1]))/(b[1]-o[1]);
+					if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
+						//records length of the wrapped-around segment
+						if(p[0] != o[0] && p[1] != o[1]){ //if p is not the current point
+							p[2] = polarize(p[0]-o[0],p[1]-o[1])[0];
+							self.grapplePoints.push(p);
+							self.grapplex = p[0];
+							self.grappley = p[1];
 
+							self.grappleLen -= 40;
+							self.grappleLenMax -= p[2];
+						}
 					}
-				}		
+				}
+			}		
+			else{
+				self.grapplex = o[0];
+				self.grappley = o[1];
 			}
+
+			
 			
 			if(grappleDist[0] > self.grappleLen){
 				var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
@@ -368,7 +380,7 @@ var Player = function(id){
 		}
 		if(self.grappleState != 0){ //grapple is not off
 			if(self.pressingSpace){ // press space to bring it back
-				console.log(self.grapplePoints);
+				//console.log(self.grapplePoints);
 				self.grappleState = 0;
 			}
 		}
