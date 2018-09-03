@@ -292,10 +292,23 @@ var Player = function(id){
 		}
 
 		if(self.grappleState == 2){
+			
+			if(grappleDist[0] > self.grappleLen){
+				var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
+				var pVec = polarize(self.spdX, self.spdY)
+				var angDiff = Math.abs(pVec[1] - ang); //take theta
+				var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
+				var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
+				self.spdX += bumpSpd[0];
+				self.spdY += bumpSpd[1];
+				//console.log(ang, self.x, self.y, bumpOut);	
+			}
+			
 			if(self.grappleLen > self.grappleLenMax){
 				self.grappleLen = self.grappleLenMax;
 			}
-			console.log(self.grappleLen, self.grappleLenMax, grappleDist)
+
+			//console.log(self.grappleLen, self.grappleLenMax, grappleDist)
 			
 			var a = self.posHist[0]; //last frame position
 			var b = self.posHist[1]; //current position
@@ -333,8 +346,8 @@ var Player = function(id){
 							self.grapplex = p[0];
 							self.grappley = p[1];
 
-							self.grappleLen -= 40;
 							self.grappleLenMax -= p[2];
+							self.grappleLen -= p[2];
 						}
 					}
 				}
@@ -344,21 +357,6 @@ var Player = function(id){
 				self.grappley = o[1];
 			}
 
-			
-			
-			if(grappleDist[0] > self.grappleLen){
-				var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
-				var pVec = polarize(self.spdX, self.spdY)
-				var angDiff = Math.abs(pVec[1] - ang); //take theta
-				var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-				var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force
-				var bumpOut = depolarize(grappleDist[0] - self.grappleLen, ang); //plus extra to push you out of the wall
-				self.x += bumpOut[0];
-				self.y += bumpOut[1];	
-				self.spdX += bumpSpd[0];
-				self.spdY += bumpSpd[1];
-				//console.log(ang, self.x, self.y, bumpOut);	
-			}
 			if (self.pressingRight){
 				var rMov = []; //di force towards right
 				rMov = depolarize(0.1, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
@@ -377,6 +375,7 @@ var Player = function(id){
 			if(self.pressingDown && self.grappleLen<self.grappleLenMax){
 				self.grappleLen+=3;
 			}
+
 		}
 		if(self.grappleState != 0){ //grapple is not off
 			if(self.pressingSpace){ // press space to bring it back
