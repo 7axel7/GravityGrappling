@@ -303,10 +303,6 @@ var Player = function(id){
 				self.spdY += bumpSpd[1];
 				//console.log(ang, self.x, self.y, bumpOut);	
 			}
-			
-			if(self.grappleLen > self.grappleLenMax){
-				self.grappleLen = self.grappleLenMax;
-			}
 
 			//console.log(self.grappleLen, self.grappleLenMax, grappleDist)
 			
@@ -369,11 +365,17 @@ var Player = function(id){
 				self.spdX += rMov[0];
 				self.spdY += rMov[1];
 			}
+
 			if(self.pressingUp && self.grappleLen>5){
 				self.grappleLen-=3;
 			}
-			if(self.pressingDown && self.grappleLen<self.grappleLenMax){
+ 
+			if(self.pressingDown && self.grappleLen < self.grappleLenMax){
 				self.grappleLen+=3;
+			}
+
+			if(self.grappleLen > self.grappleLenMax){
+				self.grappleLen = self.grappleLenMax;
 			}
 
 		}
@@ -482,6 +484,7 @@ Wall.update = function(){
 			y1:wall.y1,
 			x2:wall.x2,
 			y2:wall.y2,
+			
 		});
 	}
 	return pack;

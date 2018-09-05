@@ -1,8 +1,7 @@
 <canvas id="myCanvas" width="1200" height="675" style="border:1px solid #000000"></canvas>
 
 
-<script src="https://cdn.socket.io/socket.io-1.4.5.js">
-</script>
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
 	var socket = io(); //Connect to server
 	var c = document.getElementById("myCanvas"); //Creates canvas
@@ -10,6 +9,14 @@
     var scrC = [1200/2, 675/2];
     var client;
     var theta;
+
+    function drawRotated(ang, x, y, image){
+        ctx.save(); //save current screen position
+        ctx.translate(x, y);
+        ctx.rotate(ang);
+        ctx.drawImage(image, -image.width/2 , -image.height/2);
+        ctx.restore(); //recover to previous ctx. position
+    }
 
     var rotato = function(x, y, thetaa){
         var r = [
@@ -21,6 +28,18 @@
         return [rX, rY];
         //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
     }
+    var polarize = function(x,y){
+        var pheight = Math.sqrt(x*x+y*y);
+        var pangle = Math.atan2(y,x);
+        return [pheight,pangle];
+    }
+
+    var depolarize = function(pheight,pangle){
+        var x = pheight*Math.cos(pangle);
+        var y = pheight*Math.sin(pangle);
+        return [x, y];
+    }
+
 	socket.on('newPositions',function(data, clientId){ //listens for newPositions
         ctx.clearRect(0,0,1200,675);
         
@@ -82,9 +101,23 @@
 */
         for(var i = 0; i < data.wall.length; i++){ //wall draw loop
             var wall = data.wall[i];
-            var rotCoords1 = rotato(wall.x1 - client.x, wall.y1 - client.y, theta);
-            var rotCoords2 = rotato(wall.x2 - client.x, wall.y2 - client.y, theta);
-            ctx.beginPath();
+            var relX1 = (wall.x1 - client.x); //coords relative to client
+            var relY1 = (wall.y1 - client.y);
+            var relX2 = (wall.x2 - client.x);
+            var relY2 = (wall.y2 - client.y);
+            var rotCoords1 = rotato(relX1, relY1, theta);
+            var rotCoords2 = rotato(relX2, relY2, theta);
+            var wallPol = polarize(wall.y2 - wall.y1, wall.x2 - wall.x1); //polarized Wall Coords
+            var wallImg = new Image();
+            wallImg.src = "assets/wall.png";
+
+            for(var d = 1; d <= wallPol[0]/10 + 1; d ++){
+                var segX = wall.x1 - client.x + depolarize(d*10 - 5, -wallPol[1] + Math.PI/2)[0]; //segment x
+                var segY = wall.y1 - client.y + depolarize(d*10 - 5, -wallPol[1] + Math.PI/2)[1]; //segment y
+                var segR = rotato(segX, segY, theta);
+                drawRotated(- wallPol[1] + Math.PI/2 - theta, segR[0] + scrC[0], segR[1] + scrC[1], wallImg);
+            }
+            /*ctx.beginPath();
             ctx.moveTo(
                 rotCoords1[0] + scrC[0],
                 rotCoords1[1] + scrC[1]);
@@ -94,6 +127,7 @@
                 rotCoords2[1] + scrC[1]);
                 //console.log(wall.x2, wall.x2);
             ctx.stroke();
+            */
         }
 
         for(var i = 0; i < data.hook.length; i++){ //wall hook loop
@@ -154,9 +188,11 @@
     	socket.emit('keyPress',{inputId:'lClick',state:false});
     }
 
+
+
     document.onmousemove = function(event){ //Mouse Move Detector
         var mouseCoords = rotato(event.clientX - scrC[0], event.clientY - scrC[1], 2 * Math.PI - theta);
-        console.log(mouseCoords);
+        //console.log(mouseCoords);
         socket.emit('keyPress',{inputId:'mouseCoords',state:mouseCoords});
 
     }
