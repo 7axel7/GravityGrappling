@@ -142,12 +142,12 @@ var Player = function(id){
 	var super_update = self.update;
 
 	self.update = function(){
-		self.updateGrapple();
+		super_update();
 		self.updateSpd();
+		self.updateGrapple();
 		self.updatecamAngle();
 		self.posHist.shift();
 		self.posHist.push([self.x, self.y]);
-		super_update();
 	}
 
 	self.determineSpd = function(velocity,direction,spdLim){
@@ -291,17 +291,21 @@ var Player = function(id){
 			}
 		}
 
-		if(self.grappleState == 2){
+		if(self.grappleState == 2){ // if the grapple is attached to a wall
 			
 			if(grappleDist[0] > self.grappleLen){
 				var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
 				var pVec = polarize(self.spdX, self.spdY)
-				var angDiff = Math.abs(pVec[1] - ang); //take theta
-				var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-				var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
-				self.spdX += bumpSpd[0];
-				self.spdY += bumpSpd[1];
-				//console.log(ang, self.x, self.y, bumpOut);	
+				var angDiff = Math.abs(pVec[1] - ang);
+				if(angDiff > Math.PI/2){// doesn't create a boundary if moving towards center
+					var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
+					var bumpBack = depolarize(grappleDist[0] - self.grappleLen, ang);
+					var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
+					self.x += bumpBack[0];
+					self.y += bumpBack[1];
+					self.spdX += bumpSpd[0];
+					self.spdY += bumpSpd[1];
+				}		
 			}
 			
 			if(self.grappleLen > self.grappleLenMax){
