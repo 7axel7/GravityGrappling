@@ -295,7 +295,7 @@ var Player = function(id){
 			if(self.grappleLen > self.grappleLenMax){
 				self.grappleLen = self.grappleLenMax;
 			}
-			console.log(self.grappleLen, self.grappleLenMax, grappleDist)
+
 			
 			var a = self.posHist[0]; //last frame position
 			var b = self.posHist[1]; //current position
@@ -323,11 +323,15 @@ var Player = function(id){
 			if(!unwrapTF){
 				for(var i in cornerList){
 					var p = cornerList[i];
-					var w1 = (o[0]*(b[1]-o[1])-p[0]*(b[1]-o[1])+(p[1]-o[1])*(b[0]-o[0]))/((a[1]-o[1])*(b[0]-o[0])-(a[0]-o[0])*(b[1]-o[1]));
-					var w2 = (p[1]-o[1]-w1*(a[1]-o[1]))/(b[1]-o[1]);
-					if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
+					var a1 = Math.abs(a[0]*(b[1]-o[1]) + b[0]*(o[1]-a[1]) + o[0]*(a[1]-b[1]))
+					var a2 = Math.abs(p[0]*(b[1]-o[1]) + b[0]*(o[1]-p[1]) + o[0]*(p[1]-b[1]))
+					var a3 = Math.abs(a[0]*(p[1]-o[1]) + p[0]*(o[1]-a[1]) + o[0]*(a[1]-p[1]))
+					var a4 = Math.abs(a[0]*(b[1]-p[1]) + b[0]*(p[1]-a[1]) + p[0]*(a[1]-b[1]))
+					if (Math.floor(a2 + a3 + a4) == Math.floor(a1)){//uses variables above to check if you swang past a corner
 						//records length of the wrapped-around segment
-						if(p[0] != o[0] && p[1] != o[1]){ //if p is not the current point
+						console.log("snap");
+						if(p[0] != o[0] || p[1] != o[1]){ //if p is not the current point
+							
 							p[2] = polarize(p[0]-o[0],p[1]-o[1])[0];
 							self.grapplePoints.push(p);
 							self.grapplex = p[0];
