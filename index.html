@@ -68,18 +68,7 @@
                 ctx.stroke();
             }
         };
-/*
-        for(var i = 0; i < data.block.length; i++){ //block draw loop
-            var block = data.block[i];
-            ctx.fillRect(
-                block.x1 - client.x + scrC[0], 
-                //moves all blocks according to client's pos
-                block.y1 - client.y + scrC[1],
-                block.x2,
-                block.y2
-                );
-        };
-*/
+        
         for(var i = 0; i < data.wall.length; i++){ //wall draw loop
             var wall = data.wall[i];
             var rotCoords1 = rotato(wall.x1 - client.x, wall.y1 - client.y, theta);
