@@ -540,7 +540,7 @@ Wall.update = function(){
 ////////////////
 //GENERATE MAP//
 ////////////////
-var mirrorNo = 4; //times to mirror map rotationally
+var mirrorNo = 16; //times to mirror map rotationally
 
 var mapRead = function(){ //reads map and makes walls according to it
 	fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the content of map.txt and returns it as a string
