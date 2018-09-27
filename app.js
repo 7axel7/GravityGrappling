@@ -315,13 +315,12 @@ var Player = function(id){
 		}
 
 		if(self.grappleState == 2){ // if the grapple is attached to a wall
-			
+			var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
+			var pVec = polarize(self.spdX, self.spdY);
+			var angDiff = Math.abs(pVec[1] - ang);
+			var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 			if(grappleDist[0] > self.grappleLen){
-				var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
-				var pVec = polarize(self.spdX, self.spdY)
-				var angDiff = Math.abs(pVec[1] - ang);
 				if(angDiff > Math.PI/2){// doesn't create a boundary if moving towards center
-					var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 					var bumpBack = depolarize(grappleDist[0] - self.grappleLen, ang);
 					var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
 					self.x += bumpBack[0];
@@ -397,10 +396,10 @@ var Player = function(id){
 				self.spdY += rMov[1];
 			}
 			if(self.pressingUp && self.grappleLen>5){
-				self.grappleLen-=3;
+				self.grappleLen -= 4;
 			}
 			if(self.pressingDown && self.grappleLen<self.grappleLenMax){
-				self.grappleLen+=3;
+				self.grappleLen += 4 - normalForce;
 			}
 
 		}
