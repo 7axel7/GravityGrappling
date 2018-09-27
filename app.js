@@ -13,6 +13,10 @@ console.log('Server started.');
 
 var SOCKET_LIST = {};
 
+////////////////////
+//GLOBAL FUNCTIONS//
+////////////////////
+
 var polarize = function(x,y){
 	var pheight = Math.sqrt(x*x+y*y);
 	var pangle = Math.atan2(y,x);
@@ -24,6 +28,21 @@ var depolarize = function(pheight,pangle){
 	var y = pheight*Math.sin(pangle);
 	return [x, y];
 }
+
+var rotato = function(x, y, rtheta){
+    var r = [
+    [Math.cos(rtheta), Math.sin(rtheta)],
+    [-Math.sin(rtheta), Math.cos(rtheta)]
+    ];
+    var rX = r[0][0] * x + r[0][1] * y;
+    var rY = r[1][0] * x + r[1][1] * y;
+    return [rX, rY];
+}
+var cornerList = [];
+
+//////////
+//Entity//
+//////////
 
 var Entity = function(){
 	var self = {
@@ -112,6 +131,10 @@ var Entity = function(){
 	}
 	return self;
 }
+
+//////////
+//Player//
+//////////
 
 var Player = function(id){
 	var self = Entity();
@@ -292,13 +315,12 @@ var Player = function(id){
 		}
 
 		if(self.grappleState == 2){ // if the grapple is attached to a wall
-			
+			var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
+			var pVec = polarize(self.spdX, self.spdY);
+			var angDiff = Math.abs(pVec[1] - ang);
+			var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 			if(grappleDist[0] > self.grappleLen){
-				var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
-				var pVec = polarize(self.spdX, self.spdY)
-				var angDiff = Math.abs(pVec[1] - ang);
 				if(angDiff > Math.PI/2){// doesn't create a boundary if moving towards center
-					var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 					var bumpBack = depolarize(grappleDist[0] - self.grappleLen, ang);
 					var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
 					self.x += bumpBack[0];
@@ -376,10 +398,10 @@ var Player = function(id){
 				self.spdY += rMov[1];
 			}
 			if(self.pressingUp && self.grappleLen>5){
-				self.grappleLen-=3;
+				self.grappleLen -= 4;
 			}
 			if(self.pressingDown && self.grappleLen<self.grappleLenMax){
-				self.grappleLen+=3;
+				self.grappleLen += 4 - normalForce;
 			}
 
 		}
@@ -430,6 +452,23 @@ Player.onDisconnect = function(socket){
 	delete Player.list[socket.id];
 }
 
+Player.hookupdate = function(){
+	var pack = [];
+
+	for(var i in Player.list){
+		var player = Player.list[i];
+		if(player.grappleState > 0){
+			pack.push({ 
+				x1:player.x,
+				y1:player.y,
+				x2:player.grapplex,
+				y2:player.grappley,
+			});
+		}
+	}
+	return pack;
+}
+
 Player.update = function(){ // packs player info every update
 	var pack = [];
 
@@ -449,6 +488,10 @@ Player.update = function(){ // packs player info every update
 	return pack;
 }
 
+///////////
+//Terrain//
+///////////
+
 var Terrain = function(id){
 	var self = {
 		x1:0,
@@ -462,6 +505,9 @@ var Terrain = function(id){
 	return self;
 }
 
+/////////
+//Walls//
+/////////
 
 var Wall = function(coords, id){
 	var self = Terrain();
@@ -493,34 +539,10 @@ Wall.update = function(){
 	return pack;
 }
 
-Player.hookupdate = function(){
-	var pack = [];
-
-	for(var i in Player.list){
-		var player = Player.list[i];
-		if(player.grappleState > 0){
-			pack.push({ 
-				x1:player.x,
-				y1:player.y,
-				x2:player.grapplex,
-				y2:player.grappley,
-			});
-		}
-	}
-	return pack;
-}
-
-var rotato = function(x, y, rtheta){
-    var r = [
-    [Math.cos(rtheta), Math.sin(rtheta)],
-    [-Math.sin(rtheta), Math.cos(rtheta)]
-    ];
-    var rX = r[0][0] * x + r[0][1] * y;
-    var rY = r[1][0] * x + r[1][1] * y;
-    return [rX, rY];
-//console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
-}
-var cornerList = [];
+////////////////
+//GENERATE MAP//
+////////////////
+var mirrorNo = 4; //times to mirror map rotationally
 
 var mapRead = function(){ //reads map and makes walls according to it
 	fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the content of map.txt and returns it as a string
@@ -529,7 +551,6 @@ var mapRead = function(){ //reads map and makes walls according to it
 		}
 		//console.log(data);
 		var map = data.split("\n"); //split lines into separate strings
-		var mirrorNo = 4; //times to mirror map rotationally
 		for(i in map){
 			var wCoords = map[i].split(" "); //split strings into separate coords
 			var copy1 = false;
@@ -560,35 +581,11 @@ var mapRead = function(){ //reads map and makes walls according to it
 	});
 }
 
-
-
 mapRead();
 
-var Block = function(id){
-	var self = Terrain();
-	self.id = id;
-	self.ttype = 1;
-	self.fric = 1;
-	Block.list[id] = self;
-	return self;
-}
-
-Block.list = {};
-
-Block.update = function(){
-	var pack = [];
-
-	for(var i in Block.list){
-		var block = Block.list[i];
-		pack.push({ 
-			x1:block.x1,
-			y1:block.y1,
-			x2:block.x2,
-			y2:block.y2,
-		});
-	}
-	return pack;
-}
+/////////////////////////
+//SERVER STUFF AND LOOP//
+/////////////////////////
 
 var io = require('socket.io')(serv,{});//listens when someone connects
 io.sockets.on('connection',function(socket){
@@ -610,7 +607,6 @@ setInterval(function(){
 
 	var pack = {
 		player:Player.update(),
-		block:Block.update(),
 		wall:Wall.update(),
 		hook:Player.hookupdate(),
 	}
