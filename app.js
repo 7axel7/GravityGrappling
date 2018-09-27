@@ -362,11 +362,13 @@ var Player = function(id){
 			if(!unwrapTF){
 				for(var i in cornerList){
 					var p = cornerList[i];
-					var w1 = (o[0]*(b[1]-o[1])-p[0]*(b[1]-o[1])+(p[1]-o[1])*(b[0]-o[0]))/((a[1]-o[1])*(b[0]-o[0])-(a[0]-o[0])*(b[1]-o[1]));
-					var w2 = (p[1]-o[1]-w1*(a[1]-o[1]))/(b[1]-o[1]);
-					if (w1>=0 && w2>=0 && w1+w2<=1){//uses variables above to check if you swang past a corner
+					var a1 = Math.abs(a[0]*(b[1]-o[1]) + b[0]*(o[1]-a[1]) + o[0]*(a[1]-b[1]))
+					var a2 = Math.abs(p[0]*(b[1]-o[1]) + b[0]*(o[1]-p[1]) + o[0]*(p[1]-b[1]))
+					var a3 = Math.abs(a[0]*(p[1]-o[1]) + p[0]*(o[1]-a[1]) + o[0]*(a[1]-p[1]))
+					var a4 = Math.abs(a[0]*(b[1]-p[1]) + b[0]*(p[1]-a[1]) + p[0]*(a[1]-b[1]))
+					if (Math.floor(a2 + a3 + a4) == Math.floor(a1)){//uses variables above to check if you swang past a corner
 						//records length of the wrapped-around segment
-						if(p[0] != o[0] && p[1] != o[1]){ //if p is not the current point
+						if(p[0] != o[0] || p[1] != o[1]){ //if p is not the current point
 							p[2] = polarize(p[0]-o[0],p[1]-o[1])[0];
 							self.grapplePoints.push(p);
 							self.grapplex = p[0];
@@ -551,28 +553,28 @@ var mapRead = function(){ //reads map and makes walls according to it
 		var map = data.split("\n"); //split lines into separate strings
 		for(i in map){
 			var wCoords = map[i].split(" "); //split strings into separate coords
-			var p1 = [parseInt(wCoords[0]),parseInt(wCoords[1])];
-			var p2 = [parseInt(wCoords[2]),parseInt(wCoords[3])];
 			var copy1 = false;
 			var copy2 = false;
-			for(var i in cornerList){
-				if(p1.toString() == cornerList[i].toString()){
-					copy1 = true
-				}
-				if(p2.toString() == cornerList[i].toString()){
-					copy2 = true
-				}			
-			}
-			if(copy1 == false){
-				cornerList.push(p1);
-			}
-			if(copy2 == false){
-				cornerList.push(p2);
-			}
 			for(p = 1; p <= mirrorNo; p++){ // loop through all lines
 				var p1 = rotato(wCoords[0], wCoords[1], p * 2 * Math.PI / mirrorNo);
 				var p2 = rotato(wCoords[2], wCoords[3], p * 2 * Math.PI / mirrorNo);
 				var rCoords = [p1[0],p1[1],p2[0],p2[1]];
+				var copy1 = false;
+				var copy2 = false;
+				for(var i in cornerList){
+					if(p1.toString() == cornerList[i].toString()){
+						copy1 = true
+					}
+					if(p2.toString() == cornerList[i].toString()){
+						copy2 = true
+					}			
+				}
+				if(copy1 == false){
+					cornerList.push(p1);
+				}
+				if(copy2 == false){
+					cornerList.push(p2);
+				}
 				var wInit = new Wall(rCoords, (i - 1)*mirrorNo + p); //makes new wall
 			}
 		}
