@@ -38,7 +38,6 @@ var rotato = function(x, y, rtheta){
     var rY = r[1][0] * x + r[1][1] * y;
     return [rX, rY];
 }
-var cornerList = [];
 
 //////////
 //Entity//
@@ -542,40 +541,40 @@ Wall.update = function(){
 ////////////////
 //GENERATE MAP//
 ////////////////
+
 var mirrorNo = 16; //times to mirror map rotationally
+var cornerList = [];
 
 var mapRead = function(){ //reads map and makes walls according to it
 	fs.readFile(__dirname + '/map.txt', 'utf8', function(err, data){ //reads the content of map.txt and returns it as a string
 		if (err){
 			return console.log(err);
 		}
-		//console.log(data);
 		var map = data.split("\n"); //split lines into separate strings
 		for(i in map){
 			var wCoords = map[i].split(" "); //split strings into separate coords
-			var copy1 = false;
-			var copy2 = false;
-			for(p = 1; p <= mirrorNo; p++){ // loop through all lines
+			for(p = 0; p < mirrorNo; p++){ // loop through all lines
 				var p1 = rotato(wCoords[0], wCoords[1], p * 2 * Math.PI / mirrorNo);
 				var p2 = rotato(wCoords[2], wCoords[3], p * 2 * Math.PI / mirrorNo);
 				var rCoords = [p1[0],p1[1],p2[0],p2[1]];
 				var copy1 = false;
 				var copy2 = false;
-				for(var i in cornerList){
-					if(p1.toString() == cornerList[i].toString()){
+				for(var q in cornerList){
+					if(p1.toString() == cornerList[q].toString()){
 						copy1 = true
 					}
-					if(p2.toString() == cornerList[i].toString()){
+					if(p2.toString() == cornerList[q].toString()){
 						copy2 = true
-					}			
+					}
 				}
+				console.log(cornerList)
 				if(copy1 == false){
-					cornerList.push(p1);
+					cornerList.push(round(p1));
 				}
 				if(copy2 == false){
-					cornerList.push(p2);
+					cornerList.push(round(p2));
 				}
-				var wInit = new Wall(rCoords, (i - 1)*mirrorNo + p); //makes new wall
+				var wInit = new Wall(rCoords, i*mirrorNo+p); //makes new wall
 			}
 		}
 	});
