@@ -567,12 +567,12 @@ var mapRead = function(){ //reads map and makes walls according to it
 						copy2 = true
 					}
 				}
-				console.log(cornerList)
+				//console.log(cornerList)
 				if(copy1 == false){
-					cornerList.push(round(p1));
+					cornerList.push(Math.round(p1));
 				}
 				if(copy2 == false){
-					cornerList.push(round(p2));
+					cornerList.push(Math.round(p2));
 				}
 				var wInit = new Wall(rCoords, i*mirrorNo+p); //makes new wall
 			}
