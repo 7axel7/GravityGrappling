@@ -263,7 +263,7 @@ var Player = function(id){
 						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
 						Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
 						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
-							self.grapplePoints.push([px,py]);
+							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grapplex = wall.x1;
 							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
@@ -274,7 +274,7 @@ var Player = function(id){
 						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
 						Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
 						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
-							self.grapplePoints.push([px,py]);
+							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grappley = wall.y1;
 							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
@@ -299,7 +299,6 @@ var Player = function(id){
 							Math.max(self.grapplex, newX) > px &&
 							Math.min(self.grappley, newY) < py &&
 							Math.max(self.grappley, newY) > py){
-							
 							self.grapplePoints.push([px,py]);
 							self.grappleState = 2;
 							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0]; 
@@ -333,31 +332,31 @@ var Player = function(id){
 				self.grappleLen = self.grappleLenMax;
 			}
 
-			//console.log(self.grappleLen, self.grappleLenMax, grappleDist)
-			
 			var a = self.posHist[0]; //last frame position
 			var b = self.posHist[1]; //current position
-			var o = self.grapplePoints.slice(-1)[0]; //the current wrap point
-			var q = self.grapplePoints.slice(-2)[0];
+			var o = [self.grapplex,self.grappley]//the current wrap point
 			var unwrapTF = false;
 
-			var checkUnwrap = function(){
-				if (self.grapplePoints.length > 1){
-					var vQO = [o[0]-q[0],o[1]-q[1]];
-					var vOA = [a[0]-o[0],a[1]-o[1]];
-					var vOB = [b[0]-o[0],b[1]-o[1]];
-					if(Math.sign(vQO[0]*vOA[1]-vQO[1]*vOA[0]) != Math.sign(vQO[0]*vOB[1]-vQO[1]*vOB[0])){
-						self.grappleLen += o[2];
-						self.grappleLenMax += o[2];
-						self.grapplePoints.pop();
-						o = self.grapplePoints.slice(-1)[0];
-						q = self.grapplePoints.slice(-2)[0];
-						checkUnwrap();
-						unwrapTF = true;
-					}
+			if (self.grapplePoints.length > 1){
+				o = self.grapplePoints.slice(-1)[0]; 
+				var q = self.grapplePoints.slice(-2)[0];
+				var vQO = [o[0]-q[0],o[1]-q[1]];
+				var vOA = [a[0]-o[0],a[1]-o[1]];
+				var vOB = [b[0]-o[0],b[1]-o[1]];
+				while (Math.sign(vQO[0]*vOA[1]-vQO[1]*vOA[0]) != Math.sign(vQO[0]*vOB[1]-vQO[1]*vOB[0])){
+					console.log("unwrap!")
+					self.grappleLen += o[2];
+					self.grappleLenMax += o[2];
+					self.grapplePoints.pop();
+					o = self.grapplePoints.slice(-1)[0]; 
+					q = self.grapplePoints.slice(-2)[0];
+					vQO = [o[0]-q[0],o[1]-q[1]];
+					vOA = [a[0]-o[0],a[1]-o[1]];
+					vOB = [b[0]-o[0],b[1]-o[1]];
+					unwrapTF = true;
 				}
 			}
-			checkUnwrap();
+
 			if(!unwrapTF){
 				for(var i in cornerList){
 					var p = cornerList[i];
@@ -365,14 +364,13 @@ var Player = function(id){
 					var a2 = Math.abs(p[0]*(b[1]-o[1]) + b[0]*(o[1]-p[1]) + o[0]*(p[1]-b[1]))
 					var a3 = Math.abs(a[0]*(p[1]-o[1]) + p[0]*(o[1]-a[1]) + o[0]*(a[1]-p[1]))
 					var a4 = Math.abs(a[0]*(b[1]-p[1]) + b[0]*(p[1]-a[1]) + p[0]*(a[1]-b[1]))
-					if (Math.floor(a2 + a3 + a4) == Math.floor(a1)){//uses variables above to check if you swang past a corner
+					if ((a2 + a3 + a4).toFixed(2) == a1.toFixed(2)){//uses variables above to check if you swang past a corner
 						//records length of the wrapped-around segment
 						if(p[0] != o[0] || p[1] != o[1]){ //if p is not the current point
 							p[2] = polarize(p[0]-o[0],p[1]-o[1])[0];
 							self.grapplePoints.push(p);
 							self.grapplex = p[0];
 							self.grappley = p[1];
-
 							self.grappleLenMax -= p[2];
 							self.grappleLen -= p[2];
 						}
@@ -472,6 +470,7 @@ Player.update = function(){ // packs player info every update
 	var pack = [];
 
 	for(var i in Player.list){
+
 		var player = Player.list[i];
 		player.update();
 		pack.push({
@@ -559,25 +558,25 @@ var mapRead = function(){ //reads map and makes walls according to it
 				var rCoords = [p1[0],p1[1],p2[0],p2[1]];
 				var copy1 = false;
 				var copy2 = false;
-				for(var q in cornerList){
+				for(q in cornerList){
 					if(p1.toString() == cornerList[q].toString()){
 						copy1 = true
 					}
+
 					if(p2.toString() == cornerList[q].toString()){
 						copy2 = true
 					}
 				}
-				//console.log(cornerList)
 				if(copy1 == false){
-					cornerList.push(Math.round(p1));
+					cornerList.push(p1);
 				}
 				if(copy2 == false){
-					cornerList.push(Math.round(p2));
+					cornerList.push(p2);
 				}
 				var wInit = new Wall(rCoords, i*mirrorNo+p); //makes new wall
 			}
 		}
-	});
+	})
 }
 
 mapRead();
