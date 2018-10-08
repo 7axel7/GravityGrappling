@@ -249,8 +249,8 @@ var Player = function(id){
 			}
 		}
 		if(self.grappleState == 1){ //grapple is midair
-			self.grapplex += 10*Math.cos(self.grappleDir);
-			self.grappley += 10*Math.sin(self.grappleDir);
+			self.grapplex += 15*Math.cos(self.grappleDir);
+			self.grappley += 15*Math.sin(self.grappleDir);
 			if(grappleDist[0] > self.grappleLenMax){ //
 				self.grappleState = 0
 			}
@@ -344,7 +344,6 @@ var Player = function(id){
 				var vOA = [a[0]-o[0],a[1]-o[1]];
 				var vOB = [b[0]-o[0],b[1]-o[1]];
 				while (Math.sign(vQO[0]*vOA[1]-vQO[1]*vOA[0]) != Math.sign(vQO[0]*vOB[1]-vQO[1]*vOB[0])){
-					console.log("unwrap!")
 					self.grappleLen += o[2];
 					self.grappleLenMax += o[2];
 					self.grapplePoints.pop();
