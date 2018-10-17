@@ -187,9 +187,7 @@ var Player = function(id){
     }
     
     self.updateSpd = function(){
-    	console.log(self.mDirection,"d1");
     	self.mDirection = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
-    	console.log(self.mDirection,"d2");
     	var tVel = polarize (self.spdX, self.spdY); //total velocity
     	var ms = self.determineSpd(tVel[0], self.moveSpd, self.spdLim); //determine speed
 
@@ -424,7 +422,6 @@ var Player = function(id){
 		}
 		if(self.grappleState != 0){ //grapple is not off
 			if(self.pressingSpace){ // press space to bring it back
-				//console.log(self.grapplePoints);
 				self.grappleState = 0;
 			}
 		}	
@@ -448,17 +445,15 @@ var Ability = function(id, caster, kind){
 		caster: caster,
 	}
 	self.move = function(direction, strength){
-		console.log(self.caster.spdX,direction);
 		self.caster.spdX += strength * Math.cos(direction);
 		self.caster.spdY += strength * Math.sin(direction);
-		console.log(direction,self.caster.spdX,self.caster.spdY,self.caster.x,self.caster.mouseCoords[0], self.caster.mouseCoords[1])
 	}
 	return self;
 }
 
 Ability.cast = function(ability) {
 	if (ability.kind == "directional boost"){
-		strength = 0.1;
+		strength = 1;
 		ability.move(ability.caster.mDirection,strength);
 	}
 	else if (ability.kind == "negative directional boost"){
