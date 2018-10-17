@@ -131,42 +131,12 @@ var Entity = function(){
 	return self;
 }
 
-
-var Ability = function(id, caster, kind){
-	var self = {id:id,
-				caster:caster,
-				kind:kind}
-	self.id = id;
-	self.caster = caster;
-	self.kind = kind;
-	self.move = function(direction,strength){
-		self.caster.velX += strength*cos(direction);
-		self.caster.velY += strength*sin(direction);
-		console.log("ccast")
-	}
-	return self;
-}
-
-Ability.cast = function(ability) {
-	
-	if (ability.kind == "directional boost"){
-		strength = 10;
-		ability.move(ability.caster.direction,strength);
-	}
-	else if (ability.kind == "negative directional boost"){
-		strength = -10;
-		ability.move(ability.caster.direction,strength);
-	}
-}
-
 //////////
 //Player//
 //////////
 
 var Player = function(id){
 	var self = Entity();
-	var poop = new Ability(0, this, "directional boost");
-
 	self.id = id;
 	self.number = "" + Math.floor(10 * Math.random());
 	self.pressingRight = false;
@@ -176,9 +146,10 @@ var Player = function(id){
 	self.pressingSpace = false;
 	self.pressingLeftClick = false;
 	self.pressingGrapple = false;
-	self.mouseCoords = [];
+	self.mouseCoords = [0,0];
 	self.spdLim = 6;
 	self.rad = 10;
+	self.mDirection = 0;
 	self.jumpheight = 5;
 	self.grapplex = 0;
 	self.grappley = 0;
@@ -191,9 +162,10 @@ var Player = function(id){
 	self.grapplePoints = [];
 	self.posHist = [[0,0],[0,0]]; //position history [last frame],[this frame]
 	//                 [E    ,SHIFT];
-	self.abilityList = {poop};
-	self.abilityKeys = [true,false];
-
+	self.abilityList = [null ,null ];
+	self.abilityKeys = [true, false];
+	self.abilityList[0] = new Ability(0,self,"directional boost")
+	self.abilityList[1] = new Ability(1,self,"negative directional boost")
 
 	var super_update = self.update;
 
@@ -215,6 +187,9 @@ var Player = function(id){
     }
     
     self.updateSpd = function(){
+    	console.log(self.mDirection,"d1");
+    	self.mDirection = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
+    	console.log(self.mDirection,"d2");
     	var tVel = polarize (self.spdX, self.spdY); //total velocity
     	var ms = self.determineSpd(tVel[0], self.moveSpd, self.spdLim); //determine speed
 
@@ -271,9 +246,8 @@ var Player = function(id){
     self.updateAbilities = function(){
 		for(var i in self.abilityKeys){
 			if (i){
-				if (self.abilityList != null){
-					
-					Ability.cast(self.abilityList);
+				if (self.abilityList[i] != null){
+					Ability.cast(self.abilityList[i]);
 				}
 			}
 		}
@@ -289,7 +263,8 @@ var Player = function(id){
 			self.grappleLenMax = 500;
 			if(self.pressingGrapple){ // if player is pressing grapple button
 				self.grappleLen = self.grappleLenMax;
-				self.grappleDir = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
+				self.grappleDir = self.mDirection;
+				//self.grappleDir = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
 				self.grappleState = 1;
 				self.grapplePoints = [];
 			}
@@ -452,7 +427,7 @@ var Player = function(id){
 				//console.log(self.grapplePoints);
 				self.grappleState = 0;
 			}
-		}
+		}	
 	}
 
     self.updatecamAngle = function(){
@@ -466,6 +441,31 @@ var Player = function(id){
 
 Player.list = {};
 
+var Ability = function(id, caster, kind){
+	var self = {
+		kind: kind,
+		id: id,
+		caster: caster,
+	}
+	self.move = function(direction, strength){
+		console.log(self.caster.spdX,direction);
+		self.caster.spdX += strength * Math.cos(direction);
+		self.caster.spdY += strength * Math.sin(direction);
+		console.log(direction,self.caster.spdX,self.caster.spdY,self.caster.x,self.caster.mouseCoords[0], self.caster.mouseCoords[1])
+	}
+	return self;
+}
+
+Ability.cast = function(ability) {
+	if (ability.kind == "directional boost"){
+		strength = 0.1;
+		ability.move(ability.caster.mDirection,strength);
+	}
+	else if (ability.kind == "negative directional boost"){
+		strength = -0.1;
+		ability.move(ability.caster.mDirection,strength);
+	}
+}
 
 Player.onConnect = function(socket){
 	
