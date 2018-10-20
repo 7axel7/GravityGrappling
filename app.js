@@ -162,10 +162,12 @@ var Player = function(id){
 	self.grapplePoints = [];
 	self.posHist = [[0,0],[0,0]]; //position history [last frame],[this frame]
 	//                 [E    ,SHIFT];
-	self.abilityList = [null ,null ];
-	self.abilityKeys = [true, false];
+	self.abilityList = [null , null,  null,  null];
+	self.abilityKeys = [false, false, false, false];
 	self.abilityList[0] = new Ability(0,self,"directional boost")
 	self.abilityList[1] = new Ability(1,self,"negative directional boost")
+	self.abilityList[2] = new Ability(2,self,"movement boost")
+	self.abilityList[3] = new Ability(3,self,"negative movement boost")
 
 	var super_update = self.update;
 
@@ -243,7 +245,8 @@ var Player = function(id){
 
     self.updateAbilities = function(){
 		for(var i in self.abilityKeys){
-			if (i){
+			console.log(i);
+			if (self.abilityKeys[i] == true){
 				if (self.abilityList[i] != null){
 					Ability.cast(self.abilityList[i]);
 				}
@@ -453,11 +456,17 @@ var Ability = function(id, caster, kind){
 
 Ability.cast = function(ability) {
 	if (ability.kind == "directional boost"){
-		strength = 1;
+		strength = 5;
 		ability.move(ability.caster.mDirection,strength);
 	}
 	else if (ability.kind == "negative directional boost"){
-		strength = -0.1;
+		strength = -5;
+		ability.move(ability.caster.mDirection,strength);
+	} else if (ability.kind == "movement boost"){
+		strength = -5;
+		ability.move(ability.caster.mDirection,strength);
+	} else if (ability.kind == "negative movement boost"){
+		strength = -5;
 		ability.move(ability.caster.mDirection,strength);
 	}
 }
