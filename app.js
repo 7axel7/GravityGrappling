@@ -139,13 +139,15 @@ var Player = function(id){
 	var self = Entity();
 	self.id = id;
 	self.number = "" + Math.floor(10 * Math.random());
-	self.pressingRight = false;
-	self.pressingLeft = false;
-	self.pressingUp = false;
-	self.pressingDown = false;
-	self.pressingSpace = false;
-	self.pressingLeftClick = false;
-	self.pressingGrapple = false;
+	self.keys = 
+	[false, // LClick
+	false, // RClick
+	false, // Up
+	false, // Left
+	false, // Down
+	false, // Right
+	false, // Jump
+	false]; // Grapple
 	self.mouseCoords = [0,0];
 	self.spdLim = 6;
 	self.rad = 10;
@@ -172,6 +174,7 @@ var Player = function(id){
 	var super_update = self.update;
 
 	self.update = function(){
+		//console.log(self.keys);
 		super_update();
 		self.updateAbilities();
 		self.updateSpd();
@@ -193,7 +196,7 @@ var Player = function(id){
     	var tVel = polarize (self.spdX, self.spdY); //total velocity
     	var ms = self.determineSpd(tVel[0], self.moveSpd, self.spdLim); //determine speed
 
-    	if(self.pressingRight){
+    	if(self.keys[5]){
     		if (self.touching.length >= 1){
     			var rMov = []; //di force towards right
     			rMov = depolarize(ms, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
@@ -202,7 +205,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingLeft){
+    	if(self.keys[3]){
     		if (self.touching.length >= 1){	
     			var lMov = [];
     			lMov = depolarize(ms, (self.camAngle + Math.PI)%(2*Math.PI)); 
@@ -211,7 +214,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingDown){ //note!!! maybe remove vertical DI in future????
+    	if(self.keys[4]){ //note!!! maybe remove vertical DI in future????
     		if (self.touching.length >= 1){
     			var dMov = []; 
     			dMov = depolarize(ms, (self.camAngle + Math.PI/2)%(2*Math.PI)); //takes camera angle and adds 1/2 pi (90 degrees), modulo for sanitation
@@ -220,7 +223,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingUp){
+    	if(self.keys[2]){
     		if (self.touching.length >= 1){
     			var uMov = []; 
     			uMov = depolarize(ms, (self.camAngle + Math.PI*3/2)%(2*Math.PI));
@@ -229,7 +232,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingSpace){
+    	if(self.keys[6]){
         	if (self.touching.length >= 1){ // if player is touching a wall
         		for (var i in self.touching){
         			var wall = self.touching[i];
@@ -245,7 +248,6 @@ var Player = function(id){
 
     self.updateAbilities = function(){
 		for(var i in self.abilityKeys){
-			console.log(i);
 			if (self.abilityKeys[i] == true){
 				if (self.abilityList[i] != null){
 					Ability.cast(self.abilityList[i]);
@@ -262,7 +264,7 @@ var Player = function(id){
 			self.grappley = self.y;
 			self.grapplePoints = [];
 			self.grappleLenMax = 500;
-			if(self.pressingGrapple){ // if player is pressing grapple button
+			if(self.keys[7]){ // if player is pressing grapple button
 				self.grappleLen = self.grappleLenMax;
 				self.grappleDir = self.mDirection;
 				//self.grappleDir = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
@@ -403,28 +405,28 @@ var Player = function(id){
 				self.grappley = o[1];
 			}
 
-			if (self.pressingRight){
+			if (self.keys[5]){
 				var rMov = []; //di force towards right
 				rMov = depolarize(0.1, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
 				self.spdX += rMov[0];
 				self.spdY += rMov[1];
 			}
-			if (self.pressingLeft){
+			if (self.keys[3]){
 				var rMov = []; //di force towards right
 				rMov = depolarize(0.1, (self.camAngle + Math.PI)%(2*Math.PI)); //+ math.PI = +180 degrees
 				self.spdX += rMov[0];
 				self.spdY += rMov[1];
 			}
-			if(self.pressingUp && self.grappleLen>5){
+			if(self.keys[2] && self.grappleLen>5){
 				self.grappleLen -= 4;
 			}
-			if(self.pressingDown && self.grappleLen<self.grappleLenMax){
+			if(self.keys[4] && self.grappleLen<self.grappleLenMax){
 				self.grappleLen += 4 - normalForce;
 			}
 
 		}
 		if(self.grappleState != 0){ //grapple is not off
-			if(self.pressingSpace){ // press space to bring it back
+			if(self.keys[6]){ // press space to bring it back
 				self.grappleState = 0;
 			}
 		}	
@@ -476,22 +478,10 @@ Player.onConnect = function(socket){
 	var player = Player(socket.id);
 
 	socket.on('keyPress',function(data){
-		if(data.inputId === 'left')
-			player.pressingLeft = data.state;
-		else if(data.inputId === 'right')
-			player.pressingRight = data.state;
-		else if(data.inputId === 'up')
-			player.pressingUp = data.state;
-		else if(data.inputId === 'down')
-			player.pressingDown = data.state;
-		else if(data.inputId === 'space')
-			player.pressingSpace = data.state;
-		else if(data.inputId === 'lClick')
-			player.pressingLeftClick = data.state;
-		else if(data.inputId === 'mouseCoords')
+		if(data.inputId === 'mouseCoords')
 			player.mouseCoords = data.state;
-		else if(data.inputId === 'grapple')
-			player.pressingGrapple = data.state;
+		if(data.inputId === 'keys')
+			player.keys = data.state;
 	});
 }
 

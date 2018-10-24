@@ -20,6 +20,7 @@
         //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
     }
 	socket.on('newPositions',function(data, clientId){ //listens for newPositions
+        keyUpdate();
         ctx.clearRect(0,0,1200,675);
         
         for(var i = 0; i < data.player.length; i++){ 
