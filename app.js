@@ -139,6 +139,7 @@ var Player = function(id){
 	var self = Entity();
 	self.id = id;
 	self.number = "" + Math.floor(10 * Math.random());
+	/*
 	self.keys = 
 	[false, // LClick
 	false, // RClick
@@ -148,6 +149,11 @@ var Player = function(id){
 	false, // Right
 	false, // Jump
 	false]; // Grapple
+	*/
+	self.keys = [];
+	for (var i = 0; i < 12; i ++) {
+	  self.keys.push(false);
+	}
 	self.mouseCoords = [0,0];
 	self.spdLim = 6;
 	self.rad = 10;
@@ -166,15 +172,20 @@ var Player = function(id){
 	//                 [E    ,SHIFT];
 	self.abilityList = [null , null,  null,  null];
 	self.abilityKeys = [false, false, false, false];
+	self.abilityMaxCooldown = [100,100,100,100];
+	self.abilityDuration = [1,1,50,50];
+	self.abilityCurrCooldown = [0,0,0,0];
+
 	self.abilityList[0] = new Ability(0,self,"directional boost")
 	self.abilityList[1] = new Ability(1,self,"negative directional boost")
-	self.abilityList[2] = new Ability(2,self,"movement boost")
-	self.abilityList[3] = new Ability(3,self,"negative movement boost")
+	self.abilityList[2] = new Ability(2,self,"fly")
+	self.abilityList[3] = new Ability(3,self,"negative fly")
 
 	var super_update = self.update;
 
 	self.update = function(){
 		//console.log(self.keys);
+		self.updateCooldowns();
 		super_update();
 		self.updateAbilities();
 		self.updateSpd();
@@ -182,6 +193,20 @@ var Player = function(id){
 		self.updatecamAngle();
 		self.posHist.shift();
 		self.posHist.push([self.x, self.y]);
+	}
+
+	self.updateCooldowns = function(){
+		//console.log(self.abilityList[0],self.abilityKeys[0])
+		for (var i = 0; i < 4; i ++) {
+			if (self.abilityCurrCooldown[i] < self.abilityMaxCooldown[i]){self.abilityKeys[i] = false;}
+			if (self.abilityCurrCooldown[i] > 0){self.abilityCurrCooldown[i] -=1;}
+		}
+		for (var i = 0; i < 4; i ++) {
+			if (self.keys[8+i] && self.abilityCurrCooldown[i] == 0){
+				self.abilityCurrCooldown[i] = self.abilityMaxCooldown[i] + self.abilityDuration[i];
+				self.abilityKeys[i] = true;
+			}
+		}
 	}
 
 	self.determineSpd = function(velocity,direction,spdLim){
@@ -464,11 +489,11 @@ Ability.cast = function(ability) {
 	else if (ability.kind == "negative directional boost"){
 		strength = -5;
 		ability.move(ability.caster.mDirection,strength);
-	} else if (ability.kind == "movement boost"){
-		strength = -5;
+	} else if (ability.kind == "fly"){
+		strength = 0.25;
 		ability.move(ability.caster.mDirection,strength);
-	} else if (ability.kind == "negative movement boost"){
-		strength = -5;
+	} else if (ability.kind == "negative fly"){
+		strength = -0.25;
 		ability.move(ability.caster.mDirection,strength);
 	}
 }

@@ -6,9 +6,18 @@ var keyList = [
   [83], //S
   [68], //D
   [32], //SPACE
-  [69]  //E
+  [69],  //E
+  [16],
+  [49],
+  [50],
+  [51]
 ];
-var keys = [false,false,false,false,false,false,false,false]
+var keys = [];
+
+for (var i = 0; i < keyList.length; i ++) {
+  keys.push(false);
+}
+
 
 var isTyping = false;
 
