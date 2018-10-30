@@ -8,7 +8,7 @@ app.get('/', function(req, res) { //When a GET request is made, i.e. someone tri
 });
 
 app.use('/', express.static(__dirname)); //when any request is made give them everything in the root
-serv.listen(2000); // Server port localhost:2000
+serv.listen(2000,"https://thebestjamhackers.github.io/GravityGrappling/"); // Server port localhost:2000
 console.log('Server started.');
 
 var SOCKET_LIST = {};
