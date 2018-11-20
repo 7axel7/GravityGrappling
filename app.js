@@ -57,10 +57,11 @@ var Entity = function(){
 		id:""
 	}
 	self.update = function(){
-		self.updatePosition();
-		self.applyGravity();
-		self.applyCollision();
 		self.applyFriction();
+		self.applyGravity();
+		self.updateNewPosition();
+		self.applyCollision();
+		self.updatePosition();
 	}
 
 	self.applyGravity = function(){
@@ -92,8 +93,8 @@ var Entity = function(){
 						var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 						var bumpSpd = depolarize(-1*normalForce, (wAng - Math.PI/2)); //counteract the normal force
 						var bumpOut = depolarize(self.rad - dist, (wAng - Math.PI/2)); //plus extra to push you out of the wall
-						self.x += bumpOut[0];
-						self.y += bumpOut[1];	
+						//self.x += bumpOut[0];   //remove
+						//self.y += bumpOut[1];	//remove
 						self.spdX += bumpSpd[0];
 						self.spdY += bumpSpd[1];	
 						self.touching.push(wall);
@@ -124,9 +125,13 @@ var Entity = function(){
 			}
 		}
 	}
+	self.updateNewPosition = function(){
+		self.newPos[0] += self.spdX;
+		self.newPos[1] += self.spdY;
+	}
 	self.updatePosition = function(){
-		self.x += self.spdX;
-		self.y += self.spdY;
+		self.x += self.newPos[0];
+		self.y += self.newPos[1];
 	}
 	return self;
 }
@@ -154,6 +159,7 @@ var Player = function(id){
 	for (var i = 0; i < 12; i ++) {
 	  self.keys.push(false);
 	}
+	self.newPos = [0,0];
 	self.mouseCoords = [0,0];
 	self.spdLim = 6;
 	self.rad = 10;
@@ -179,7 +185,7 @@ var Player = function(id){
 	self.abilityList[0] = new Ability(0,self,"directional boost")
 	self.abilityList[1] = new Ability(1,self,"negative directional boost")
 	self.abilityList[2] = new Ability(2,self,"fly")
-	self.abilityList[3] = new Ability(3,self,"negative fly")
+	self.abilityList[3] = new Ability(3,self,"stationary")
 
 	var super_update = self.update;
 
@@ -478,6 +484,10 @@ var Ability = function(id, caster, kind){
 		self.caster.spdX += strength * Math.cos(direction);
 		self.caster.spdY += strength * Math.sin(direction);
 	}
+	self.stop = function(){
+		self.caster.spdX = 0;
+		self.caster.spdY = 0;
+	}
 	return self;
 }
 
@@ -495,6 +505,9 @@ Ability.cast = function(ability) {
 	} else if (ability.kind == "negative fly"){
 		strength = -0.25;
 		ability.move(ability.caster.mDirection,strength);
+	}else if (ability.kind == "stationary"){
+		strength = 0;
+		ability.stop();
 	}
 }
 
