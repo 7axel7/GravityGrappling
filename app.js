@@ -45,27 +45,24 @@ var rotato = function(x, y, rtheta){
 
 var Entity = function(){
 	var self = {
+		pos: [0,0],
 		fric:7, //how much friction affects movement
-		x:0,
-		y:1,
 		spdX:0,
 		spdY:0,
 		grav:-1/10, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
 		touching: [], //list of everything it's touching
+		newPos: [0,0],
 		id:""
 	}
 	self.update = function(){
-		self.applyFriction();
-		self.applyGravity();
-		self.updateNewPosition();
-		self.applyCollision();
+		
 		self.updatePosition();
 	}
 
 	self.applyGravity = function(){
-		var Grangle = Math.atan2(0 - self.y, 0 - self.x); //find angle towards 0,0
+		var Grangle = Math.atan2(0 - self.pos[1], 0 - self.pos[0]); //find angle towards 0,0
 		var gravVector = depolarize(self.grav, Grangle);
 		self.spdX += gravVector[0];
 		self.spdY += gravVector[1];
@@ -73,17 +70,18 @@ var Entity = function(){
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
-		//console.log(self.x,self.y)
+		//console.log(self.pos[0],self.pos[1])
 		self.touching = [];
 		for(var i in Wall.list){
 			var wall = Wall.list[i]; //loop through all walls
-			if (Math.sqrt(Math.pow(wall.midx - self.x, 2) + 
-			Math.pow(wall.midy - self.y, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-				if (Math.min(wall.x1, wall.x2) - self.rad < self.x &&
-				Math.max(wall.x1, wall.x2) + self.rad > self.x &&
-				Math.min(wall.y1, wall.y2) - self.rad < self.y &&
-				Math.max(wall.y1, wall.y2) + self.rad > self.y){ //second stage detection (minimum bounding box + player's radius)
-					var a = (self.x - wall.x1) * (-wall.y2 + wall.y1) + (self.y - wall.y1) * (wall.x2 - wall.x1);
+			if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
+			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
+			collideSnap(wall);
+				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
+				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
+				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
+				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
+					var a = (self.pos[0] - wall.x1) * (-wall.y2 + wall.y1) + (self.pos[1] - wall.y1) * (wall.x2 - wall.x1);
 					var b = Math.sqrt((-wall.y2 + wall.y1) * (-wall.y2 + wall.y1) + (wall.x2 - wall.x1) * (wall.x2 - wall.x1));
 					var dist = Math.abs(a / b); //find distance from player's center to the closest point on the line
 					if(dist <= self.rad){
@@ -92,9 +90,6 @@ var Entity = function(){
 						var angDiff = Math.abs(pVec[1] - (wAng - Math.PI/2)); //take theta
 						var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 						var bumpSpd = depolarize(-1*normalForce, (wAng - Math.PI/2)); //counteract the normal force
-						var bumpOut = depolarize(self.rad - dist, (wAng - Math.PI/2)); //plus extra to push you out of the wall
-						//self.x += bumpOut[0];   //remove
-						//self.y += bumpOut[1];	//remove
 						self.spdX += bumpSpd[0];
 						self.spdY += bumpSpd[1];	
 						self.touching.push(wall);
@@ -125,13 +120,56 @@ var Entity = function(){
 			}
 		}
 	}
-	self.updateNewPosition = function(){
-		self.newPos[0] += self.spdX;
-		self.newPos[1] += self.spdY;
+
+	self.collideSnap = function(wall){ // boundary is [x1,y1,x2,y2]
+		var pX = self.pos[0] + self.spdX;
+		var pY = self.pos[1] + self.spdY;
+		if (Math.min(wall.x1, wall.x2) - self.rad < Math.max(self.pos[0], pX) &&
+			Math.max(wall.x1, wall.x2) + self.rad > Math.min(self.pos[0], pX) &&
+			Math.min(wall.y1, wall.y2) - self.rad < Math.max(self.pos[1], pY) &&
+			Math.max(wall.y1, wall.y2) + self.rad > Math.min(self.pos[1], pY)){
+
+			var pSlope;
+			var pYInt;
+			var wSlope;
+			var wYInt;
+			var xP = []
+			if (self.pos[0]!=pX){
+				pSlope = (self.pos[1]-pY)/(self.pos[0]-pX);
+				pYint = pY-pSlope*pX;
+			}
+			if (wall.x1 != wall.x2){
+				wSlope = (wall.y1-wall.y2)/(wall.x1-wall.x2);
+				wYInt = wall.y1-wSlope*wall.x1
+			}
+
+			//pSlope*x + pYInt = wSlope*x + wYInt = y
+			//(pYInt-wYInt)/(wSlope-pSlope) = x
+			if (pSlope != wSlope){
+				if (pSlope!= undefined){
+					if (wSlope == undefined){
+						xP[0] = wall.x1
+					}
+					else{
+						xP[0] = (pYInt-wYInt)/(wSlope-pSlope)
+					}
+				}
+				else{
+					xP[0] = self.pos[0]
+				}
+				xP[1] = pSlope*xP[0] + pYInt
+			}
+		}
+
+		
+			
+
+		//Test if that position is closer than new position
+		DISTANCE FORUMULAA??
 	}
 	self.updatePosition = function(){
-		self.x += self.newPos[0];
-		self.y += self.newPos[1];
+		self.pos[0] = self.newPos[0];
+		self.pos[1] = self.newPos[1];
 	}
 	return self;
 }
@@ -159,7 +197,7 @@ var Player = function(id){
 	for (var i = 0; i < 12; i ++) {
 	  self.keys.push(false);
 	}
-	self.newPos = [0,0];
+	
 	self.mouseCoords = [0,0];
 	self.spdLim = 6;
 	self.rad = 10;
@@ -193,12 +231,16 @@ var Player = function(id){
 		//console.log(self.keys);
 		self.updateCooldowns();
 		super_update();
-		self.updateAbilities();
+		self.applyFriction();
+		self.applyGravity();
 		self.updateSpd();
+		self.collideSnap();
 		self.updateGrapple();
+		self.applyCollision();
+		self.updateAbilities();
 		self.updatecamAngle();
 		self.posHist.shift();
-		self.posHist.push([self.x, self.y]);
+		self.posHist.push([self.pos[0], self.pos[1]]);
 	}
 
 	self.updateCooldowns = function(){
@@ -289,10 +331,10 @@ var Player = function(id){
 
     self.updateGrapple = function(){
  
-		var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
+		var grappleDist = polarize(self.grapplex-self.pos[0], self.grappley - self.pos[1]);
 		if(self.grappleState == 0){ //grapple is off
-			self.grapplex = self.x;
-			self.grappley = self.y;
+			self.grapplex = self.pos[0];
+			self.grappley = self.pos[1];
 			self.grapplePoints = [];
 			self.grappleLenMax = 500;
 			if(self.keys[7]){ // if player is pressing grapple button
@@ -321,7 +363,7 @@ var Player = function(id){
 							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grapplex = wall.x1;
-							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
+							self.grappleLen = polarize(self.grapplex - self.pos[0], self.grappley - self.pos[1])[0];
 						}
 					}
 					else if(wall.y1 == wall.y2){ //horizontal wall
@@ -332,7 +374,7 @@ var Player = function(id){
 							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grappley = wall.y1;
-							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
+							self.grappleLen = polarize(self.grapplex - self.pos[0], self.grappley - self.pos[1])[0];
 						}
 					}
 					else {
@@ -356,7 +398,7 @@ var Player = function(id){
 							Math.max(self.grappley, newY) > py){
 							self.grapplePoints.push([px,py]);
 							self.grappleState = 2;
-							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0]; 
+							self.grappleLen = polarize(self.grapplex - self.pos[0], self.grappley - self.pos[1])[0]; 
 							self.grapplex = px;
 							self.grappley = py;
 							
@@ -368,16 +410,13 @@ var Player = function(id){
 		}
 
 		if(self.grappleState == 2){ // if the grapple is attached to a wall
-			var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
+			var ang = Math.atan2(self.grappley - self.pos[1], self.grapplex - self.pos[0]);
 			var pVec = polarize(self.spdX, self.spdY);
 			var angDiff = Math.abs(pVec[1] - ang);
 			var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 			if(grappleDist[0] > self.grappleLen){
 				if(angDiff > Math.PI/2){// doesn't create a boundary if moving towards center
-					var bumpBack = depolarize(grappleDist[0] - self.grappleLen, ang);
 					var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
-					self.x += bumpBack[0];
-					self.y += bumpBack[1];
 					self.spdX += bumpSpd[0];
 					self.spdY += bumpSpd[1];
 				}		
@@ -464,7 +503,7 @@ var Player = function(id){
 	}
 
     self.updatecamAngle = function(){
-    	var Pangle = Math.atan2(0 - self.y, 0 - self.x);
+    	var Pangle = Math.atan2(0 - self.pos[1], 0 - self.pos[0]);
     	self.camAngle = (Pangle - (Math.PI * 3 / 2)) % (2*Math.PI);
     }
 
