@@ -74,14 +74,14 @@ var Entity = function(){
 		self.touching = [];
 		for(var i in Wall.list){
 			var wall = Wall.list[i]; //loop through all walls
-			if (Math.sqrt(Math.pow(wall.midx - self.x, 2) + 
-			Math.pow(wall.midy - self.y, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-				if (Math.min(wall.x1, wall.x2) - self.rad < self.x &&
-				Math.max(wall.x1, wall.x2) + self.rad > self.x &&
-				Math.min(wall.y1, wall.y2) - self.rad < self.y &&
-				Math.max(wall.y1, wall.y2) + self.rad > self.y){ //second stage detection (minimum bounding box + player's radius)
-					var x1 = self.x;
-					var y1 = self.y;
+			if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
+			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
+				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
+				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
+				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
+				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
+					var x1 = self.pos[0];
+					var y1 = self.pos[1];
 					var x2 = self.newPos[0];
 					var y2 = self.newPos[1];
 					var x3 = wall.x1;
