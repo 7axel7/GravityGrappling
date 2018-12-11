@@ -74,24 +74,34 @@ var Entity = function(){
 		self.touching = [];
 		for(var i in Wall.list){
 			var wall = Wall.list[i]; //loop through all walls
-			if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
-			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-			collideSnap(wall);
-				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
-				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
-				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
-				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
-					var a = (self.pos[0] - wall.x1) * (-wall.y2 + wall.y1) + (self.pos[1] - wall.y1) * (wall.x2 - wall.x1);
-					var b = Math.sqrt((-wall.y2 + wall.y1) * (-wall.y2 + wall.y1) + (wall.x2 - wall.x1) * (wall.x2 - wall.x1));
-					var dist = Math.abs(a / b); //find distance from player's center to the closest point on the line
-					if(dist <= self.rad){
-						var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
-						var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
-						var angDiff = Math.abs(pVec[1] - (wAng - Math.PI/2)); //take theta
-						var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-						var bumpSpd = depolarize(-1*normalForce, (wAng - Math.PI/2)); //counteract the normal force
-						self.spdX += bumpSpd[0];
-						self.spdY += bumpSpd[1];	
+			if (Math.sqrt(Math.pow(wall.midx - self.x, 2) + 
+			Math.pow(wall.midy - self.y, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
+				if (Math.min(wall.x1, wall.x2) - self.rad < self.x &&
+				Math.max(wall.x1, wall.x2) + self.rad > self.x &&
+				Math.min(wall.y1, wall.y2) - self.rad < self.y &&
+				Math.max(wall.y1, wall.y2) + self.rad > self.y){ //second stage detection (minimum bounding box + player's radius)
+					var x1 = self.x;
+					var y1 = self.y;
+					var x2 = self.newPos[0];
+					var y2 = self.newPos[1];
+					var x3 = wall.x1;
+					var y3 = wall.y1;
+					var x4 = wall.x2;
+					var y4 = wall.y2;
+					var a = ((y3-y4)*(x1-x3) + (x4-x3)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 1
+					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
+					if (0<=a<=1 && 0<=b<=1){
+						var wAng = Math.atan2(wall.y2 - wall.y1, wall.x2 - wall.x1);
+						var pAng = Math.atan2(self.spdY, self.spdX); //find the angle you're moving in, and the mag
+						var angDiff = Math.abs(pAng - wAng); //take theta
+
+						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
+						
+						self.newPos[0] = x1 + a*(x2-x1);
+						self.newPos[1] = y1 + a*(x2-x1);
+						self.newPos[0] += bumpOut[0];
+						self.newPos[1] += bumpOut[1];
+						self.touching.pop();	
 						self.touching.push(wall);
 					}
 				}
