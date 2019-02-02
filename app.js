@@ -249,8 +249,9 @@ var Player = function(id){
 			}
 		}
 		if(self.grappleState == 1){ //grapple is midair
-			self.grapplex += 15*Math.cos(self.grappleDir);
-			self.grappley += 15*Math.sin(self.grappleDir);
+			var grapSpd = 20
+			self.grapplex += grapSpd*Math.cos(self.grappleDir);
+			self.grappley += grapSpd*Math.sin(self.grappleDir);
 			if(grappleDist[0] > self.grappleLenMax){ //
 				self.grappleState = 0
 			}
@@ -260,9 +261,9 @@ var Player = function(id){
 				Math.pow(wall.midy - self.grappley, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
 					if(wall.x1 == wall.x2){ //vertical wall
 						if (Math.min(wall.y1, wall.y2)-5 < self.grappley &&
-						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
-						Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
-						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
+						Math.max(wall.y1, wall.y2)+5 > self.grappley && 
+						Math.sign(self.grapplex - wall.x1) != Math.sign((self.grapplex + grapSpd*Math.cos(self.grappleDir)) - wall.x1)){
+							self.grapplex = wall.x1;
 							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grapplex = wall.x1;
@@ -270,10 +271,10 @@ var Player = function(id){
 						}
 					}
 					else if(wall.y1 == wall.y2){ //horizontal wall
-						if (Math.min(wall.y1, wall.y2)-5 < self.grappley &&
-						Math.max(wall.y1, wall.y2)+5 > self.grappley &&
+						if (Math.sign(self.grappley - wall.y1) != Math.sign((self.grappley + grapSpd*Math.sin(self.grappleDir)) - wall.y1) &&
 						Math.min(wall.x1, wall.x2)-5 < self.grapplex &&
 						Math.max(wall.x1, wall.x2)+5 > self.grapplex){
+							self.grappley = wall.y1;
 							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grappley = wall.y1;
@@ -281,8 +282,8 @@ var Player = function(id){
 						}
 					}
 					else {
-						var newX = self.grapplex + 10*Math.cos(self.grappleDir);
-						var newY = self.grappley + 10*Math.sin(self.grappleDir);
+						var newX = self.grapplex + grapSpd*Math.cos(self.grappleDir);
+						var newY = self.grappley + grapSpd*Math.sin(self.grappleDir);
 						var a = (self.grapplex * newY - self.grappley * newX);
 						var b = (wall.x1 * wall.y2 - wall.y1 * wall.x2);
 						var cx = (self.grapplex - newX);

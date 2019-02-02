@@ -7,7 +7,7 @@
     var scrC = [1200/2, 675/2];
     var client;
     var theta;
-
+    ctx.lineWidth = 3;
     var rotato = function(x, y, thetaa){
         var r = [
             [Math.cos(thetaa), Math.sin(thetaa)],
@@ -83,6 +83,7 @@
         }
 
         for(var i = 0; i < data.hook.length; i++){ //wall hook loop
+            
             var hook = data.hook[i];
             var rotCoords1 = rotato(hook.x1 - client.x, hook.y1 - client.y, theta);
             var rotCoords2 = rotato(hook.x2 - client.x, hook.y2 - client.y, theta);
