@@ -46,9 +46,8 @@ var rotato = function(x, y, rtheta){
 var Entity = function(){
 	var self = {
 		pos: [0,0],
+		vel: [0,0],
 		fric:7, //how much friction affects movement
-		spdX:0,
-		spdY:0,
 		grav:-1/10, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
@@ -64,9 +63,9 @@ var Entity = function(){
 	self.applyGravity = function(){
 		var Grangle = Math.atan2(0 - self.pos[1], 0 - self.pos[0]); //find angle towards 0,0
 		var gravVector = depolarize(self.grav, Grangle);
-		self.spdX += gravVector[0];
-		self.spdY += gravVector[1];
-		//console.log(gravVector,self.spdX, self.spdY);
+		self.vel[0] += gravVector[0];
+		self.vel[1] += gravVector[1];
+		//console.log(gravVector,self.vel[0], self.vel[1]);
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
@@ -92,7 +91,7 @@ var Entity = function(){
 					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
 					if (0<=a<=1 && 0<=b<=1){
 						var wAng = Math.atan2(wall.y2 - wall.y1, wall.x2 - wall.x1);
-						var pAng = Math.atan2(self.spdY, self.spdX); //find the angle you're moving in, and the mag
+						var pAng = Math.atan2(self.vel[1], self.vel[0]); //find the angle you're moving in, and the mag
 						var angDiff = Math.abs(pAng - wAng); //take theta
 
 						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
@@ -113,7 +112,7 @@ var Entity = function(){
 		if (self.touching.length >= 1){
 			for (var i in self.touching){
 				var wall = self.touching[i];
-				var mom = polarize(self.spdX, self.spdY); //get polar vector for momentum
+				var mom = polarize(self.vel[0], self.vel[1]); //get polar vector for momentum
 				var ur = [];
 				var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
 				var angDiff = Math.abs(mom[1] - (wAng + Math.PI/2)); //take theta
@@ -122,19 +121,19 @@ var Entity = function(){
 				if (friction < mom[0]){ // friction doesnt completely stop object
 					mom[0] -= friction;
 					ur = depolarize(mom[0], mom[1]);
-					self.spdX = ur[0];
-					self.spdY = ur[1];
+					self.vel[0] = ur[0];
+					self.vel[1] = ur[1];
 				} else {
-					self.spdX = 0;
-					self.spdY = 0; // friction completely stops object
+					self.vel[0] = 0;
+					self.vel[1] = 0; // friction completely stops object
 				}
 			}
 		}
 	}
 
 	self.collideSnap = function(wall){ // boundary is [x1,y1,x2,y2]
-		var pX = self.pos[0] + self.spdX;
-		var pY = self.pos[1] + self.spdY;
+		var pX = self.pos[0] + self.vel[0];
+		var pY = self.pos[1] + self.vel[1];
 		if (Math.min(wall.x1, wall.x2) - self.rad < Math.max(self.pos[0], pX) &&
 			Math.max(wall.x1, wall.x2) + self.rad > Math.min(self.pos[0], pX) &&
 			Math.min(wall.y1, wall.y2) - self.rad < Math.max(self.pos[1], pY) &&
@@ -248,6 +247,7 @@ var Player = function(id){
 		self.applyCollision();
 		self.updateAbilities();
 		self.updatecamAngle();
+
 		self.posHist.shift();
 		self.posHist.push([self.pos[0], self.pos[1]]);
 	}
@@ -275,15 +275,15 @@ var Player = function(id){
     
     self.updateSpd = function(){
     	self.mouseDirection = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
-    	var tVel = polarize (self.spdX, self.spdY); //total velocity
+    	var tVel = polarize (self.vel[0], self.vel[1]); //total velocity
     	var ms = self.determineSpd(tVel[0], self.moveSpd, self.spdLim); //determine speed
 
     	if(self.keys[5]){
     		if (self.touching.length >= 1){
     			var rMov = []; //di force towards right
     			rMov = depolarize(ms, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
-    			self.spdX += rMov[0];
-    			self.spdY += rMov[1];
+    			self.vel[0] += rMov[0];
+    			self.vel[1] += rMov[1];
     		}
     	}
 
@@ -291,8 +291,8 @@ var Player = function(id){
     		if (self.touching.length >= 1){	
     			var lMov = [];
     			lMov = depolarize(ms, (self.camAngle + Math.PI)%(2*Math.PI)); 
-    			self.spdX += lMov[0];
-    			self.spdY += lMov[1];
+    			self.vel[0] += lMov[0];
+    			self.vel[1] += lMov[1];
     		}
     	}
 
@@ -300,8 +300,8 @@ var Player = function(id){
     		if (self.touching.length >= 1){
     			var dMov = []; 
     			dMov = depolarize(ms, (self.camAngle + Math.PI/2)%(2*Math.PI)); //takes camera angle and adds 1/2 pi (90 degrees), modulo for sanitation
-    			self.spdX += dMov[0];
-    			self.spdY += dMov[1];
+    			self.vel[0] += dMov[0];
+    			self.vel[1] += dMov[1];
     		}
     	}
 
@@ -309,8 +309,8 @@ var Player = function(id){
     		if (self.touching.length >= 1){
     			var uMov = []; 
     			uMov = depolarize(ms, (self.camAngle + Math.PI*3/2)%(2*Math.PI));
-    			self.spdX += uMov[0];
-    			self.spdY += uMov[1];
+    			self.vel[0] += uMov[0];
+    			self.vel[1] += uMov[1];
     		}
     	}
 
@@ -321,8 +321,8 @@ var Player = function(id){
         			var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1); //find out wall's angle
         			var jump = [];
         			jump = depolarize(self.jumpheight / self.touching.length, wAng - Math.PI/2); //jump according to normal
-        			self.spdX += jump[0];
-        			self.spdY += jump[1];
+        			self.vel[0] += jump[0];
+        			self.vel[1] += jump[1];
         		}
         	}
         }
@@ -421,14 +421,14 @@ var Player = function(id){
 
 		if(self.grappleState == 2){ // if the grapple is attached to a wall
 			var ang = Math.atan2(self.grappley - self.pos[1], self.grapplex - self.pos[0]);
-			var pVec = polarize(self.spdX, self.spdY);
+			var pVec = polarize(self.vel[0], self.vel[1]);
 			var angDiff = Math.abs(pVec[1] - ang);
 			var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 			if(grappleDist[0] > self.grappleLen){
 				if(angDiff > Math.PI/2){// doesn't create a boundary if moving towards center
 					var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
-					self.spdX += bumpSpd[0];
-					self.spdY += bumpSpd[1];
+					self.vel[0] += bumpSpd[0];
+					self.vel[1] += bumpSpd[1];
 				}		
 			}
 			
@@ -488,14 +488,14 @@ var Player = function(id){
 			if (self.keys[5]){
 				var rMov = []; //di force towards right
 				rMov = depolarize(0.1, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
-				self.spdX += rMov[0];
-				self.spdY += rMov[1];
+				self.vel[0] += rMov[0];
+				self.vel[1] += rMov[1];
 			}
 			if (self.keys[3]){
 				var rMov = []; //di force towards right
 				rMov = depolarize(0.1, (self.camAngle + Math.PI)%(2*Math.PI)); //+ math.PI = +180 degrees
-				self.spdX += rMov[0];
-				self.spdY += rMov[1];
+				self.vel[0] += rMov[0];
+				self.vel[1] += rMov[1];
 			}
 			if(self.keys[2] && self.grappleLen>5){
 				self.grappleLen -= 4;
