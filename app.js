@@ -103,6 +103,7 @@ var Entity = function(){
 						self.newPos[1] += bumpOut[1];
 						self.touching.pop();	
 						self.touching.push(wall);
+
 					}
 				}
 			}
@@ -175,7 +176,7 @@ var Entity = function(){
 			
 
 		//Test if that position is closer than new position
-		DISTANCE FORUMULAA??
+		//DISTANCE FORUMULAA??
 	}
 	self.updatePosition = function(){
 		self.pos[0] = self.newPos[0];
@@ -207,11 +208,10 @@ var Player = function(id){
 	for (var i = 0; i < 12; i ++) {
 	  self.keys.push(false);
 	}
-	
 	self.mouseCoords = [0,0];
 	self.spdLim = 6;
 	self.rad = 10;
-	self.mDirection = 0;
+	self.mouseDirection = 0;
 	self.jumpheight = 5;
 	self.grapplex = 0;
 	self.grappley = 0;
@@ -244,7 +244,6 @@ var Player = function(id){
 		self.applyFriction();
 		self.applyGravity();
 		self.updateSpd();
-		self.collideSnap();
 		self.updateGrapple();
 		self.applyCollision();
 		self.updateAbilities();
@@ -275,7 +274,7 @@ var Player = function(id){
     }
     
     self.updateSpd = function(){
-    	self.mDirection = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
+    	self.mouseDirection = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
     	var tVel = polarize (self.spdX, self.spdY); //total velocity
     	var ms = self.determineSpd(tVel[0], self.moveSpd, self.spdLim); //determine speed
 
@@ -349,7 +348,7 @@ var Player = function(id){
 			self.grappleLenMax = 500;
 			if(self.keys[7]){ // if player is pressing grapple button
 				self.grappleLen = self.grappleLenMax;
-				self.grappleDir = self.mDirection;
+				self.grappleDir = self.mouseDirection;
 				//self.grappleDir = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
 				self.grappleState = 1;
 				self.grapplePoints = [];
@@ -544,17 +543,17 @@ var Ability = function(id, caster, kind){
 Ability.cast = function(ability) {
 	if (ability.kind == "directional boost"){
 		strength = 5;
-		ability.move(ability.caster.mDirection,strength);
+		ability.move(ability.caster.mouseDirection,strength);
 	}
 	else if (ability.kind == "negative directional boost"){
 		strength = -5;
-		ability.move(ability.caster.mDirection,strength);
+		ability.move(ability.caster.mouseDirection,strength);
 	} else if (ability.kind == "fly"){
 		strength = 0.25;
-		ability.move(ability.caster.mDirection,strength);
+		ability.move(ability.caster.mouseDirection,strength);
 	} else if (ability.kind == "negative fly"){
 		strength = -0.25;
-		ability.move(ability.caster.mDirection,strength);
+		ability.move(ability.caster.mouseDirection,strength);
 	}else if (ability.kind == "stationary"){
 		strength = 0;
 		ability.stop();
