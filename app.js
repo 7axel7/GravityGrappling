@@ -56,7 +56,9 @@ var Entity = function(){
 		id:""
 	}
 	self.update = function(){
-		
+		self.applyGravity();
+		self.applyCollision();
+		self.applyFriction();
 		self.updatePosition();
 	}
 
@@ -93,16 +95,15 @@ var Entity = function(){
 						var wAng = Math.atan2(wall.y2 - wall.y1, wall.x2 - wall.x1);
 						var pAng = Math.atan2(self.vel[1], self.vel[0]); //find the angle you're moving in, and the mag
 						var angDiff = Math.abs(pAng - wAng); //take theta
-
-						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
 						
 						self.newPos[0] = x1 + a*(x2-x1);
 						self.newPos[1] = y1 + a*(x2-x1);
+						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
 						self.newPos[0] += bumpOut[0];
 						self.newPos[1] += bumpOut[1];
 						self.touching.pop();	
 						self.touching.push(wall);
-
+						self.collideSnap(wall);
 					}
 				}
 			}
@@ -178,6 +179,8 @@ var Entity = function(){
 		//DISTANCE FORUMULAA??
 	}
 	self.updatePosition = function(){
+		self.newPos[0] += self.vel[0]
+		self.newPos[1] += self.vel[1]
 		self.pos[0] = self.newPos[0];
 		self.pos[1] = self.newPos[1];
 	}
@@ -237,14 +240,11 @@ var Player = function(id){
 	var super_update = self.update;
 
 	self.update = function(){
-		//console.log(self.keys);
+		console.log(self.pos);
 		self.updateCooldowns();
 		super_update();
-		self.applyFriction();
-		self.applyGravity();
 		self.updateSpd();
 		self.updateGrapple();
-		self.applyCollision();
 		self.updateAbilities();
 		self.updatecamAngle();
 
