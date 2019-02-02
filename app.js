@@ -8,7 +8,7 @@ app.get('/', function(req, res) { //When a GET request is made, i.e. someone tri
 });
 
 app.use('/', express.static(__dirname)); //when any request is made give them everything in the root
-serv.listen(2000); // Server port localhost:2000
+serv.listen(process.env.PORT || 2000); // Server port localhost:2000
 console.log('Server started.');
 
 var SOCKET_LIST = {};
@@ -45,26 +45,24 @@ var rotato = function(x, y, rtheta){
 
 var Entity = function(){
 	var self = {
+		pos: [0,0],
 		fric:7, //how much friction affects movement
-		x:0,
-		y:1,
 		spdX:0,
 		spdY:0,
 		grav:-1/10, //Personal gravity stat
 		render:800, // Render Distance
 		rad:0, //hitbox radius
 		touching: [], //list of everything it's touching
+		newPos: [0,0],
 		id:""
 	}
 	self.update = function(){
+		
 		self.updatePosition();
-		self.applyGravity();
-		self.applyCollision();
-		self.applyFriction();
 	}
 
 	self.applyGravity = function(){
-		var Grangle = Math.atan2(0 - self.y, 0 - self.x); //find angle towards 0,0
+		var Grangle = Math.atan2(0 - self.pos[1], 0 - self.pos[0]); //find angle towards 0,0
 		var gravVector = depolarize(self.grav, Grangle);
 		self.spdX += gravVector[0];
 		self.spdY += gravVector[1];
@@ -72,30 +70,38 @@ var Entity = function(){
 	} //apply gravity to player's velocity
 
 	self.applyCollision = function(){
-		//console.log(self.x,self.y)
+		//console.log(self.pos[0],self.pos[1])
 		self.touching = [];
 		for(var i in Wall.list){
 			var wall = Wall.list[i]; //loop through all walls
-			if (Math.sqrt(Math.pow(wall.midx - self.x, 2) + 
-			Math.pow(wall.midy - self.y, 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-				if (Math.min(wall.x1, wall.x2) - self.rad < self.x &&
-				Math.max(wall.x1, wall.x2) + self.rad > self.x &&
-				Math.min(wall.y1, wall.y2) - self.rad < self.y &&
-				Math.max(wall.y1, wall.y2) + self.rad > self.y){ //second stage detection (minimum bounding box + player's radius)
-					var a = (self.x - wall.x1) * (-wall.y2 + wall.y1) + (self.y - wall.y1) * (wall.x2 - wall.x1);
-					var b = Math.sqrt((-wall.y2 + wall.y1) * (-wall.y2 + wall.y1) + (wall.x2 - wall.x1) * (wall.x2 - wall.x1));
-					var dist = Math.abs(a / b); //find distance from player's center to the closest point on the line
-					if(dist <= self.rad){
-						var wAng = Math.atan2(wall.y2 - wall.y1,wall.x2 - wall.x1);
-						var pVec = polarize(self.spdX, self.spdY); //find the angle you're moving in, and the mag
-						var angDiff = Math.abs(pVec[1] - (wAng - Math.PI/2)); //take theta
-						var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
-						var bumpSpd = depolarize(-1*normalForce, (wAng - Math.PI/2)); //counteract the normal force
-						var bumpOut = depolarize(self.rad - dist, (wAng - Math.PI/2)); //plus extra to push you out of the wall
-						self.x += bumpOut[0];
-						self.y += bumpOut[1];	
-						self.spdX += bumpSpd[0];
-						self.spdY += bumpSpd[1];	
+			if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
+			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
+				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
+				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
+				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
+				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
+					var x1 = self.pos[0];
+					var y1 = self.pos[1];
+					var x2 = self.newPos[0];
+					var y2 = self.newPos[1];
+					var x3 = wall.x1;
+					var y3 = wall.y1;
+					var x4 = wall.x2;
+					var y4 = wall.y2;
+					var a = ((y3-y4)*(x1-x3) + (x4-x3)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 1
+					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
+					if (0<=a<=1 && 0<=b<=1){
+						var wAng = Math.atan2(wall.y2 - wall.y1, wall.x2 - wall.x1);
+						var pAng = Math.atan2(self.spdY, self.spdX); //find the angle you're moving in, and the mag
+						var angDiff = Math.abs(pAng - wAng); //take theta
+
+						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
+						
+						self.newPos[0] = x1 + a*(x2-x1);
+						self.newPos[1] = y1 + a*(x2-x1);
+						self.newPos[0] += bumpOut[0];
+						self.newPos[1] += bumpOut[1];
+						self.touching.pop();	
 						self.touching.push(wall);
 					}
 				}
@@ -124,9 +130,56 @@ var Entity = function(){
 			}
 		}
 	}
+
+	self.collideSnap = function(wall){ // boundary is [x1,y1,x2,y2]
+		var pX = self.pos[0] + self.spdX;
+		var pY = self.pos[1] + self.spdY;
+		if (Math.min(wall.x1, wall.x2) - self.rad < Math.max(self.pos[0], pX) &&
+			Math.max(wall.x1, wall.x2) + self.rad > Math.min(self.pos[0], pX) &&
+			Math.min(wall.y1, wall.y2) - self.rad < Math.max(self.pos[1], pY) &&
+			Math.max(wall.y1, wall.y2) + self.rad > Math.min(self.pos[1], pY)){
+
+			var pSlope;
+			var pYInt;
+			var wSlope;
+			var wYInt;
+			var xP = []
+			if (self.pos[0]!=pX){
+				pSlope = (self.pos[1]-pY)/(self.pos[0]-pX);
+				pYint = pY-pSlope*pX;
+			}
+			if (wall.x1 != wall.x2){
+				wSlope = (wall.y1-wall.y2)/(wall.x1-wall.x2);
+				wYInt = wall.y1-wSlope*wall.x1
+			}
+
+			//pSlope*x + pYInt = wSlope*x + wYInt = y
+			//(pYInt-wYInt)/(wSlope-pSlope) = x
+			if (pSlope != wSlope){
+				if (pSlope!= undefined){
+					if (wSlope == undefined){
+						xP[0] = wall.x1
+					}
+					else{
+						xP[0] = (pYInt-wYInt)/(wSlope-pSlope)
+					}
+				}
+				else{
+					xP[0] = self.pos[0]
+				}
+				xP[1] = pSlope*xP[0] + pYInt
+			}
+		}
+
+		
+			
+
+		//Test if that position is closer than new position
+		DISTANCE FORUMULAA??
+	}
 	self.updatePosition = function(){
-		self.x += self.spdX;
-		self.y += self.spdY;
+		self.pos[0] = self.newPos[0];
+		self.pos[1] = self.newPos[1];
 	}
 	return self;
 }
@@ -139,16 +192,26 @@ var Player = function(id){
 	var self = Entity();
 	self.id = id;
 	self.number = "" + Math.floor(10 * Math.random());
-	self.pressingRight = false;
-	self.pressingLeft = false;
-	self.pressingUp = false;
-	self.pressingDown = false;
-	self.pressingSpace = false;
-	self.pressingLeftClick = false;
-	self.pressingGrapple = false;
-	self.mouseCoords = [];
+	/*
+	self.keys = 
+	[false, // LClick
+	false, // RClick
+	false, // Up
+	false, // Left
+	false, // Down
+	false, // Right
+	false, // Jump
+	false]; // Grapple
+	*/
+	self.keys = [];
+	for (var i = 0; i < 12; i ++) {
+	  self.keys.push(false);
+	}
+	
+	self.mouseCoords = [0,0];
 	self.spdLim = 6;
 	self.rad = 10;
+	self.mDirection = 0;
 	self.jumpheight = 5;
 	self.grapplex = 0;
 	self.grappley = 0;
@@ -160,16 +223,48 @@ var Player = function(id){
 	self.moveSpd = 1;
 	self.grapplePoints = [];
 	self.posHist = [[0,0],[0,0]]; //position history [last frame],[this frame]
+	//                 [E    ,SHIFT];
+	self.abilityList = [null , null,  null,  null];
+	self.abilityKeys = [false, false, false, false];
+	self.abilityMaxCooldown = [100,100,100,100];
+	self.abilityDuration = [1,1,50,50];
+	self.abilityCurrCooldown = [0,0,0,0];
+
+	self.abilityList[0] = new Ability(0,self,"directional boost")
+	self.abilityList[1] = new Ability(1,self,"negative directional boost")
+	self.abilityList[2] = new Ability(2,self,"fly")
+	self.abilityList[3] = new Ability(3,self,"stationary")
 
 	var super_update = self.update;
 
 	self.update = function(){
+		//console.log(self.keys);
+		self.updateCooldowns();
 		super_update();
+		self.applyFriction();
+		self.applyGravity();
 		self.updateSpd();
+		self.collideSnap();
 		self.updateGrapple();
+		self.applyCollision();
+		self.updateAbilities();
 		self.updatecamAngle();
 		self.posHist.shift();
-		self.posHist.push([self.x, self.y]);
+		self.posHist.push([self.pos[0], self.pos[1]]);
+	}
+
+	self.updateCooldowns = function(){
+		//console.log(self.abilityList[0],self.abilityKeys[0])
+		for (var i = 0; i < 4; i ++) {
+			if (self.abilityCurrCooldown[i] < self.abilityMaxCooldown[i]){self.abilityKeys[i] = false;}
+			if (self.abilityCurrCooldown[i] > 0){self.abilityCurrCooldown[i] -=1;}
+		}
+		for (var i = 0; i < 4; i ++) {
+			if (self.keys[8+i] && self.abilityCurrCooldown[i] == 0){
+				self.abilityCurrCooldown[i] = self.abilityMaxCooldown[i] + self.abilityDuration[i];
+				self.abilityKeys[i] = true;
+			}
+		}
 	}
 
 	self.determineSpd = function(velocity,direction,spdLim){
@@ -180,10 +275,11 @@ var Player = function(id){
     }
     
     self.updateSpd = function(){
+    	self.mDirection = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
     	var tVel = polarize (self.spdX, self.spdY); //total velocity
     	var ms = self.determineSpd(tVel[0], self.moveSpd, self.spdLim); //determine speed
 
-    	if(self.pressingRight){
+    	if(self.keys[5]){
     		if (self.touching.length >= 1){
     			var rMov = []; //di force towards right
     			rMov = depolarize(ms, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
@@ -192,7 +288,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingLeft){
+    	if(self.keys[3]){
     		if (self.touching.length >= 1){	
     			var lMov = [];
     			lMov = depolarize(ms, (self.camAngle + Math.PI)%(2*Math.PI)); 
@@ -201,7 +297,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingDown){ //note!!! maybe remove vertical DI in future????
+    	if(self.keys[4]){ //note!!! maybe remove vertical DI in future????
     		if (self.touching.length >= 1){
     			var dMov = []; 
     			dMov = depolarize(ms, (self.camAngle + Math.PI/2)%(2*Math.PI)); //takes camera angle and adds 1/2 pi (90 degrees), modulo for sanitation
@@ -210,7 +306,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingUp){
+    	if(self.keys[2]){
     		if (self.touching.length >= 1){
     			var uMov = []; 
     			uMov = depolarize(ms, (self.camAngle + Math.PI*3/2)%(2*Math.PI));
@@ -219,7 +315,7 @@ var Player = function(id){
     		}
     	}
 
-    	if(self.pressingSpace){
+    	if(self.keys[6]){
         	if (self.touching.length >= 1){ // if player is touching a wall
         		for (var i in self.touching){
         			var wall = self.touching[i];
@@ -233,17 +329,28 @@ var Player = function(id){
         }
     }
 
+    self.updateAbilities = function(){
+		for(var i in self.abilityKeys){
+			if (self.abilityKeys[i] == true){
+				if (self.abilityList[i] != null){
+					Ability.cast(self.abilityList[i]);
+				}
+			}
+		}
+	}
+
     self.updateGrapple = function(){
  
-		var grappleDist = polarize(self.grapplex-self.x, self.grappley - self.y);
+		var grappleDist = polarize(self.grapplex-self.pos[0], self.grappley - self.pos[1]);
 		if(self.grappleState == 0){ //grapple is off
-			self.grapplex = self.x;
-			self.grappley = self.y;
+			self.grapplex = self.pos[0];
+			self.grappley = self.pos[1];
 			self.grapplePoints = [];
 			self.grappleLenMax = 500;
-			if(self.pressingGrapple){ // if player is pressing grapple button
+			if(self.keys[7]){ // if player is pressing grapple button
 				self.grappleLen = self.grappleLenMax;
-				self.grappleDir = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
+				self.grappleDir = self.mDirection;
+				//self.grappleDir = polarize(self.mouseCoords[0], self.mouseCoords[1])[1];
 				self.grappleState = 1;
 				self.grapplePoints = [];
 			}
@@ -267,7 +374,7 @@ var Player = function(id){
 							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grapplex = wall.x1;
-							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
+							self.grappleLen = polarize(self.grapplex - self.pos[0], self.grappley - self.pos[1])[0];
 						}
 					}
 					else if(wall.y1 == wall.y2){ //horizontal wall
@@ -278,7 +385,7 @@ var Player = function(id){
 							self.grapplePoints.push([self.grapplex,self.grappley]);
 							self.grappleState = 2;
 							self.grappley = wall.y1;
-							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0];
+							self.grappleLen = polarize(self.grapplex - self.pos[0], self.grappley - self.pos[1])[0];
 						}
 					}
 					else {
@@ -302,7 +409,7 @@ var Player = function(id){
 							Math.max(self.grappley, newY) > py){
 							self.grapplePoints.push([px,py]);
 							self.grappleState = 2;
-							self.grappleLen = polarize(self.grapplex - self.x, self.grappley - self.y)[0]; 
+							self.grappleLen = polarize(self.grapplex - self.pos[0], self.grappley - self.pos[1])[0]; 
 							self.grapplex = px;
 							self.grappley = py;
 							
@@ -314,16 +421,13 @@ var Player = function(id){
 		}
 
 		if(self.grappleState == 2){ // if the grapple is attached to a wall
-			var ang = Math.atan2(self.grappley - self.y, self.grapplex - self.x);
+			var ang = Math.atan2(self.grappley - self.pos[1], self.grapplex - self.pos[0]);
 			var pVec = polarize(self.spdX, self.spdY);
 			var angDiff = Math.abs(pVec[1] - ang);
 			var normalForce = pVec[0]*Math.cos(angDiff) ; //mg cosTheta
 			if(grappleDist[0] > self.grappleLen){
 				if(angDiff > Math.PI/2){// doesn't create a boundary if moving towards center
-					var bumpBack = depolarize(grappleDist[0] - self.grappleLen, ang);
 					var bumpSpd = depolarize(-1*normalForce, ang); //counteract the normal force	
-					self.x += bumpBack[0];
-					self.y += bumpBack[1];
 					self.spdX += bumpSpd[0];
 					self.spdY += bumpSpd[1];
 				}		
@@ -382,36 +486,35 @@ var Player = function(id){
 				self.grappley = o[1];
 			}
 
-			if (self.pressingRight){
+			if (self.keys[5]){
 				var rMov = []; //di force towards right
 				rMov = depolarize(0.1, (self.camAngle + Math.PI*2)%(2*Math.PI)); //+ math.PI = +180 degrees
 				self.spdX += rMov[0];
 				self.spdY += rMov[1];
 			}
-			if (self.pressingLeft){
+			if (self.keys[3]){
 				var rMov = []; //di force towards right
 				rMov = depolarize(0.1, (self.camAngle + Math.PI)%(2*Math.PI)); //+ math.PI = +180 degrees
 				self.spdX += rMov[0];
 				self.spdY += rMov[1];
 			}
-			if(self.pressingUp && self.grappleLen>5){
+			if(self.keys[2] && self.grappleLen>5){
 				self.grappleLen -= 4;
 			}
-			if(self.pressingDown && self.grappleLen<self.grappleLenMax){
+			if(self.keys[4] && self.grappleLen<self.grappleLenMax){
 				self.grappleLen += 4 - normalForce;
 			}
 
 		}
 		if(self.grappleState != 0){ //grapple is not off
-			if(self.pressingSpace){ // press space to bring it back
-				//console.log(self.grapplePoints);
+			if(self.keys[6]){ // press space to bring it back
 				self.grappleState = 0;
 			}
-		}
+		}	
 	}
 
     self.updatecamAngle = function(){
-    	var Pangle = Math.atan2(0 - self.y, 0 - self.x);
+    	var Pangle = Math.atan2(0 - self.pos[1], 0 - self.pos[0]);
     	self.camAngle = (Pangle - (Math.PI * 3 / 2)) % (2*Math.PI);
     }
 
@@ -421,27 +524,52 @@ var Player = function(id){
 
 Player.list = {};
 
+var Ability = function(id, caster, kind){
+	var self = {
+		kind: kind,
+		id: id,
+		caster: caster,
+	}
+	self.move = function(direction, strength){
+		self.caster.spdX += strength * Math.cos(direction);
+		self.caster.spdY += strength * Math.sin(direction);
+	}
+	self.stop = function(){
+		self.caster.spdX = 0;
+		self.caster.spdY = 0;
+	}
+	return self;
+}
+
+Ability.cast = function(ability) {
+	if (ability.kind == "directional boost"){
+		strength = 5;
+		ability.move(ability.caster.mDirection,strength);
+	}
+	else if (ability.kind == "negative directional boost"){
+		strength = -5;
+		ability.move(ability.caster.mDirection,strength);
+	} else if (ability.kind == "fly"){
+		strength = 0.25;
+		ability.move(ability.caster.mDirection,strength);
+	} else if (ability.kind == "negative fly"){
+		strength = -0.25;
+		ability.move(ability.caster.mDirection,strength);
+	}else if (ability.kind == "stationary"){
+		strength = 0;
+		ability.stop();
+	}
+}
+
 Player.onConnect = function(socket){
 	
 	var player = Player(socket.id);
 
 	socket.on('keyPress',function(data){
-		if(data.inputId === 'left')
-			player.pressingLeft = data.state;
-		else if(data.inputId === 'right')
-			player.pressingRight = data.state;
-		else if(data.inputId === 'up')
-			player.pressingUp = data.state;
-		else if(data.inputId === 'down')
-			player.pressingDown = data.state;
-		else if(data.inputId === 'space')
-			player.pressingSpace = data.state;
-		else if(data.inputId === 'lClick')
-			player.pressingLeftClick = data.state;
-		else if(data.inputId === 'mouseCoords')
+		if(data.inputId === 'mouseCoords')
 			player.mouseCoords = data.state;
-		else if(data.inputId === 'grapple')
-			player.pressingGrapple = data.state;
+		if(data.inputId === 'keys')
+			player.keys = data.state;
 	});
 }
 
