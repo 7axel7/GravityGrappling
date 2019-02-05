@@ -74,38 +74,8 @@ var Entity = function(){
 		self.touching = [];
 		for(var i in Wall.list){
 			var wall = Wall.list[i]; //loop through all walls
-			if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
-			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
-				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
-				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
-				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
-					var x1 = self.pos[0];
-					var y1 = self.pos[1];
-					var x2 = self.newPos[0];
-					var y2 = self.newPos[1];
-					var x3 = wall.x1;
-					var y3 = wall.y1;
-					var x4 = wall.x2;
-					var y4 = wall.y2;
-					var a = ((y3-y4)*(x1-x3) + (x4-x3)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 1
-					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
-					if (0<=a<=1 && 0<=b<=1){
-						var wAng = Math.atan2(wall.y2 - wall.y1, wall.x2 - wall.x1);
-						var pAng = Math.atan2(self.spdY, self.spdX); //find the angle you're moving in, and the mag
-						var angDiff = Math.abs(pAng - wAng); //take theta
-
-						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
-						
-						self.newPos[0] = x1 + a*(x2-x1);
-						self.newPos[1] = y1 + a*(x2-x1);
-						self.newPos[0] += bumpOut[0];
-						self.newPos[1] += bumpOut[1];
-						self.touching.pop();	
-						self.touching.push(wall);
-					}
-				}
-			}
+			self.collideSnap(wall);
+			
 		}
 	} //find applicable walls and applies collision
 	self.applyFriction = function() {
@@ -132,48 +102,94 @@ var Entity = function(){
 	}
 
 	self.collideSnap = function(wall){ // boundary is [x1,y1,x2,y2]
-		var pX = self.pos[0] + self.spdX;
-		var pY = self.pos[1] + self.spdY;
-		if (Math.min(wall.x1, wall.x2) - self.rad < Math.max(self.pos[0], pX) &&
-			Math.max(wall.x1, wall.x2) + self.rad > Math.min(self.pos[0], pX) &&
-			Math.min(wall.y1, wall.y2) - self.rad < Math.max(self.pos[1], pY) &&
-			Math.max(wall.y1, wall.y2) + self.rad > Math.min(self.pos[1], pY)){
+		if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
+			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
+				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
+				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
+				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
+				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
+					
+					//////////////////////////////////////////////////////////////
+					////Check min. distance from line segment to line segment.////
+					//////////////////////////////////////////////////////////////
 
-			var pSlope;
-			var pYInt;
-			var wSlope;
-			var wYInt;
-			var xP = []
-			if (self.pos[0]!=pX){
-				pSlope = (self.pos[1]-pY)/(self.pos[0]-pX);
-				pYint = pY-pSlope*pX;
-			}
-			if (wall.x1 != wall.x2){
-				wSlope = (wall.y1-wall.y2)/(wall.x1-wall.x2);
-				wYInt = wall.y1-wSlope*wall.x1
-			}
+						//check if it intersects
 
-			//pSlope*x + pYInt = wSlope*x + wYInt = y
-			//(pYInt-wYInt)/(wSlope-pSlope) = x
-			if (pSlope != wSlope){
-				if (pSlope!= undefined){
-					if (wSlope == undefined){
-						xP[0] = wall.x1
+					var x1 = self.pos[0];
+					var y1 = self.pos[1];
+					var x2 = self.newPos[0];
+					var y2 = self.newPos[1];
+					var x3 = wall.x1;
+					var y3 = wall.y1;
+					var x4 = wall.x2;
+					var y4 = wall.y2;
+					var a = ((y3-y4)*(x1-x3) + (x4-x3)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 1
+					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
+					if (0<=a<=1 && 0<=b<=1){
+						
 					}
-					else{
-						xP[0] = (pYInt-wYInt)/(wSlope-pSlope)
+
+					if linesegs do not intersect:
+						if point a intersects at least one of [lineseg2.perp]: 
+							D1 = distance from point a to line 2
+						else:
+							D1 = min(distance from point a to points c and d)
+						
+						if point b intersects lineseg2.perp: 
+							D2 = distance from point b to line 2
+						else:
+							D2 = min(distance from point b to points c and d)
+
+						if point c intersects lineseg1.perp: 
+							D3 = distance from point c to line 2
+						else:
+							D3 = min(distance from point c to points a and b)
+
+						if point d intersects lineseg1.perp: 
+							D4 = distance from point d to line 2
+						else:
+							D4 = min(distance from point d to points a and b)
+
+						Mindistanceee = Min(D1,D2,D3,D4);
+					
+					else:
+						mindistanceeee = 0
+
+					if mindisatnceeee < self.rad {
+						if intersects the circle:
+							return intersect with circle
+						if intersects with the rectancle:
+							return intersect with rectancle
 					}
+
+
+					/*var x1 = self.pos[0];
+					var y1 = self.pos[1];
+					var x2 = self.newPos[0];
+					var y2 = self.newPos[1];
+					var x3 = wall.x1;
+					var y3 = wall.y1;
+					var x4 = wall.x2;
+					var y4 = wall.y2;
+					var a = ((y3-y4)*(x1-x3) + (x4-x3)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 1
+					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
+					if (0<=a<=1 && 0<=b<=1){
+						var wAng = Math.atan2(wall.y2 - wall.y1, wall.x2 - wall.x1);
+						var pAng = Math.atan2(self.spdY, self.spdX); //find the angle you're moving in, and the mag
+						var angDiff = Math.abs(pAng - wAng); //take theta
+
+						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
+						
+						self.newPos[0] = x1 + a*(x2-x1);
+						self.newPos[1] = y1 + a*(x2-x1);
+						self.newPos[0] += bumpOut[0];
+						self.newPos[1] += bumpOut[1];
+						self.touching.pop();	
+						self.touching.push(wall);
+
+					}*/
 				}
-				else{
-					xP[0] = self.pos[0]
-				}
-				xP[1] = pSlope*xP[0] + pYInt
 			}
-		}
-
-		
-			
-
 		//Test if that position is closer than new position
 		DISTANCE FORUMULAA??
 	}
