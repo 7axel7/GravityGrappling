@@ -134,6 +134,8 @@ var Entity = function(){
 						var D2;
 						var D3;
 						var D4;
+						https://stackoverflow.com/questions/385305/efficient-maths-algorithm-to-calculate-intersections
+						(y1-y0)*(x-(x0+x1)/2)+(x0-x1)*(y-(y0+y1)/2)=c
 						if point a intersects at least one of [lineseg2.perp]: 
 							D1 = distance from point a to line 2
 						else:
