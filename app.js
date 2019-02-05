@@ -81,29 +81,7 @@ var Entity = function(){
 				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
 				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
 				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
-					var x1 = self.pos[0];
-					var y1 = self.pos[1];
-					var x2 = self.newPos[0];
-					var y2 = self.newPos[1];
-					var x3 = wall.x1;
-					var y3 = wall.y1;
-					var x4 = wall.x2;
-					var y4 = wall.y2;
-					var a = ((y3-y4)*(x1-x3) + (x4-x3)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 1
-					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
-					if (0<=a<=1 && 0<=b<=1){
-						var wAng = Math.atan2(wall.y2 - wall.y1, wall.x2 - wall.x1);
-						var pAng = Math.atan2(self.vel[1], self.vel[0]); //find the angle you're moving in, and the mag
-						var angDiff = Math.abs(pAng - wAng); //take theta
-						
-						self.newPos[0] = x1 + a*(x2-x1);
-						self.newPos[1] = y1 + a*(x2-x1);
-						var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-pAng); //plus extra to push you out of the wall
-						self.newPos[0] += bumpOut[0];
-						self.newPos[1] += bumpOut[1];
-						self.touching.pop();	
-						self.touching.push(wall);
-						self.collideSnap(wall);
+					self.collideSnap(wall);
 					}
 				}
 			}
@@ -133,34 +111,29 @@ var Entity = function(){
 	}
 
 	self.collideSnap = function(wall){ // boundary is [x1,y1,x2,y2]
-		if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
-			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
-				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
-				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
-				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
-					
-					//////////////////////////////////////////////////////////////
-					////Check min. distance from line segment to line segment.////
-					//////////////////////////////////////////////////////////////
 
-						//check if it intersects
+					//check if it intersects
 
-					var x1 = self.pos[0];
+					var x1 = self.pos[0];//point a
 					var y1 = self.pos[1];
-					var x2 = self.newPos[0];
+					var x2 = self.newPos[0];// point b
 					var y2 = self.newPos[1];
-					var x3 = wall.x1;
+					var x3 = wall.x1; //point c
 					var y3 = wall.y1;
-					var x4 = wall.x2;
+					var x4 = wall.x2; // point d
 					var y4 = wall.y2;
 					var a = ((y3-y4)*(x1-x3) + (x4-x3)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 1
 					var b = ((y1-y2)*(x1-x3) + (x2-x1)*(y1-y3))/((x4-x3)*(y1-y2)-(x1-x2)*(y4-y3)); //intersection point scalar 2
-					if (0<=a<=1 && 0<=b<=1){
-						
-					}
+					var minDistance;
 
-					if linesegs do not intersect:
+					if (0<=a<=1 && 0<=b<=1){
+						minDistance = 0
+					}
+					else{
+						var D1;
+						var D2;
+						var D3;
+						var D4;
 						if point a intersects at least one of [lineseg2.perp]: 
 							D1 = distance from point a to line 2
 						else:
@@ -181,16 +154,11 @@ var Entity = function(){
 						else:
 							D4 = min(distance from point d to points a and b)
 
-						Mindistanceee = Min(D1,D2,D3,D4);
-					
-					else:
-						mindistanceeee = 0
+						minDistance = min(D1,D2,D3,D4);
+					}	
 
-					if mindisatnceeee < self.rad {
-						if intersects the circle:
-							return intersect with circle
-						if intersects with the rectancle:
-							return intersect with rectancle
+					if minDistance < self.rad {
+						
 					}
 
 
