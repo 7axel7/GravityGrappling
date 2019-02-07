@@ -50,7 +50,7 @@ var Entity = function(){
 		fric:7, //how much friction affects movement
 		grav:-1/10, //Personal gravity stat
 		render:800, // Render Distance
-		rad:0, //hitbox radius
+		rad:5, //hitbox radius
 		touching: [], //list of everything it's touching
 		newPos: [0,0],
 		id:""
@@ -114,8 +114,6 @@ var Entity = function(){
 	}
 
 	self.collideSnap = function(wall) { // boundary is [x1,y1,x2,y2]
-
-		console.log("collide")
 		//check if it intersects
 		var x = [self.pos[0], self.newPos[0], wall.x1, wall.x2]
 		var y = [self.pos[1], self.newPos[1], wall.y1, wall.y2]
@@ -149,10 +147,10 @@ var Entity = function(){
 				intX = wallX1 + u*(wallX2 - wallX1)
 				intY = wallY1 + u*(wallY2 - wallY1)
 				distances[i] = Math.hypot(x[i]-intX, y[i]-intY)
+				console.log(minDistance)
 			}
 			minDistance = min(distances);
 		}	
-
 		if (minDistance < self.rad) { //If the wall is touched
 			var wallAng = Math.atan2(y[3] - y[2], x[3] - x[2]);
 			var playerAng = Math.atan2(y[1]-y[0], x[1]-x[0]); //find the angle you're moving in, and the mag
@@ -163,14 +161,16 @@ var Entity = function(){
 
 			maybePos[0] = x[0] + (x[1]-x[0]); //Times A??? WHATT That breaks everything
 			maybePos[1] = y[0] + (y[1]-y[0]);
-			console.log(self.newPos,bumpOut)
-			maybePos[0] += bumpOut[0];
-			maybePos[1] += bumpOut[1];
+			//console.log(self.newPos,bumpOut)
+			//maybePos[0] += bumpOut[0];
+			//maybePos[1] += bumpOut[1];
 			if (Math.hypot(maybePos[0] - x[0], maybePos[1] - y[0]) >= Math.hypot(self.newPos[0] - x[0], self.newPos[1] - y[0])){
 				self.newPos = maybePos
+				self.vel[0] += Math.hypot(self.vel[0],self.vel[1])*Math.cos(angDiff)
+				self.vel[1] += Math.hypot(self.vel[0],self.vel[1])*Math.sin(angDiff)
+				self.touching.pop();	
+				self.touching.push(wall);
 			}
-			self.touching.pop();	
-			self.touching.push(wall);
 		}
 	}
 	return self;
@@ -229,7 +229,7 @@ var Player = function(id){
 	var super_update = self.update;
 
 	self.update = function(){
-		console.log(self.pos);
+		//console.log(self.pos);
 		self.updateCooldowns();
 		super_update();
 		self.updateSpd();
@@ -519,12 +519,12 @@ var Ability = function(id, caster, kind){
 		caster: caster,
 	}
 	self.move = function(direction, strength){
-		self.caster.spdX += strength * Math.cos(direction);
-		self.caster.spdY += strength * Math.sin(direction);
+		self.caster.vel[1] += strength * Math.cos(direction);
+		self.caster.vel[0] += strength * Math.sin(direction);
 	}
 	self.stop = function(){
-		self.caster.spdX = 0;
-		self.caster.spdY = 0;
+		self.caster.vel[1] = 0;
+		self.caster.vel[0] = 0;
 	}
 	return self;
 }
@@ -572,8 +572,8 @@ Player.hookupdate = function(){
 		var player = Player.list[i];
 		if(player.grappleState > 0){
 			pack.push({ 
-				x1:player.x,
-				y1:player.y,
+				x1:player.pos[0],
+				y1:player.pos[1],
 				x2:player.grapplex,
 				y2:player.grappley,
 			});
@@ -590,12 +590,12 @@ Player.update = function(){ // packs player info every update
 		var player = Player.list[i];
 		player.update();
 		pack.push({
-			x:player.x,
-			y:player.y,
+			x:player.pos[0],
+			y:player.pos[1],
 			number:player.number,
 			pId:player.id,
-			spdX:player.spdX,
-			spdY:player.spdY,
+			spdX:player.vel[0],
+			spdY:player.vel[1],
 			rot:player.camAngle
 		});
 	}
