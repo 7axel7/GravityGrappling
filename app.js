@@ -128,6 +128,28 @@ var Entity = function(){
 		if (w != 0){
 			t = (v[0] * s[1] - v[1] * s[0]) / w  //(q − p) × s / (r × s)
 			u = (v[0] * r[1] - v[1] * r[0]) / w  //(q − p) × r / (r × s)
+			if (0<=t && t <= 1 && 0<= u && u <= 1){
+				minDistance = 0
+				var wallAng = Math.atan2(y[3] - y[2], x[3] - x[2]);
+				var playerAng = Math.atan2(y[1]-y[0], x[1]-x[0]); //find the angle you're moving in, and the mag
+				var angDiff = Math.abs(playerAng - wallAng); //take theta
+				var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-playerAng); //plus extra to push you out of the wall
+				var maybePos = [0,0];
+				maybePos[0] = x[0] + t*r[0]; 
+				maybePos[1] = y[0] + t*r[1];
+				//console.log(self.newPos,bumpOut)
+				maybePos[0] += bumpOut[0];
+				maybePos[1] += bumpOut[1];
+				if (Math.hypot(maybePos[0] - x[0], maybePos[1] - y[0]) >= Math.hypot(self.newPos[0] - x[0], self.newPos[1] - y[0])){
+					self.newPos = maybePos
+					pushAmount = Math.hypot(self.vel[0],self.vel[1])*Math.sin(angDiff)
+					self.vel[0] += pushAmount * Math.cos(wallAng + Math.PI/2)
+					self.vel[1] += pushAmount * Math.sin(wallAng + Math.PI/2)
+					self.touching.pop();	
+					self.touching.push(wall);
+				}
+				return;
+			}
 		}
 
 		var distances = [null,null,null,null];
@@ -153,6 +175,7 @@ var Entity = function(){
 			//console.log(x[i],intX, y[i],intY)
 		}
 		minDistance = Math.min(distances[0],distances[1],distances[2],distances[3]);
+
 		console.log(minDistance)
 		if (minDistance < self.rad) { //If the wall is touched
 			var wallAng = Math.atan2(y[3] - y[2], x[3] - x[2]);
@@ -167,8 +190,9 @@ var Entity = function(){
 			maybePos[1] += bumpOut[1];
 			if (Math.hypot(maybePos[0] - x[0], maybePos[1] - y[0]) >= Math.hypot(self.newPos[0] - x[0], self.newPos[1] - y[0])){
 				self.newPos = maybePos
-				self.vel[0] += Math.hypot(self.vel[0],self.vel[1])*Math.cos(angDiff)
-				self.vel[1] += Math.hypot(self.vel[0],self.vel[1])*Math.sin(angDiff)
+				pushAmount = Math.hypot(self.vel[0],self.vel[1])*Math.sin(angDiff)
+				self.vel[0] += pushAmount * Math.cos(wallAng + Math.PI/2)
+				self.vel[1] += pushAmount * Math.sin(wallAng + Math.PI/2)
 				self.touching.pop();	
 				self.touching.push(wall);
 			}
