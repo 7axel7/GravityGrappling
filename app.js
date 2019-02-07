@@ -56,10 +56,13 @@ var Entity = function(){
 		id:""
 	}
 	self.update = function(){
+		self.newPos[0] += self.vel[0]
+		self.newPos[1] += self.vel[1]
 		self.applyGravity();
 		self.applyCollision();
 		self.applyFriction();
-		self.updatePosition();
+		self.pos[0] = self.newPos[0];
+		self.pos[1] = self.newPos[1];
 	}
 
 	self.applyGravity = function(){
@@ -112,6 +115,7 @@ var Entity = function(){
 
 	self.collideSnap = function(wall) { // boundary is [x1,y1,x2,y2]
 
+		console.log("collide")
 		//check if it intersects
 		var x = [self.pos[0], self.newPos[0], wall.x1, wall.x2]
 		var y = [self.pos[1], self.newPos[1], wall.y1, wall.y2]
@@ -154,22 +158,20 @@ var Entity = function(){
 			var playerAng = Math.atan2(y[1]-y[0], x[1]-x[0]); //find the angle you're moving in, and the mag
 			var angDiff = Math.abs(playerAng - wallAng); //take theta
 
-			var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-playerAng); //plus extra to push you out of the wall
-			
-			self.newPos[0] = x[0] + a*(x[1]-x[0]);
-			self.newPos[1] = y[0] + a*(x[1]-x[0]);
-			self.newPos[0] += bumpOut[0];
-			self.newPos[1] += bumpOut[1];
+			var bumpOut = depolarize(Math.sin(angDiff)*self.rad,-playerAng); //plus extra to push you out of the wall
+			var maybePos = [0,0];
+
+			maybePos[0] = x[0] + (x[1]-x[0]); //Times A??? WHATT That breaks everything
+			maybePos[1] = y[0] + (y[1]-y[0]);
+			console.log(self.newPos,bumpOut)
+			maybePos[0] += bumpOut[0];
+			maybePos[1] += bumpOut[1];
+			if (Math.hypot(maybePos[0] - x[0], maybePos[1] - y[0]) >= Math.hypot(self.newPos[0] - x[0], self.newPos[1] - y[0])){
+				self.newPos = maybePos
+			}
 			self.touching.pop();	
 			self.touching.push(wall);
 		}
-	}
-
-	self.updatePosition = function(){
-		self.newPos[0] += self.vel[0]
-		self.newPos[1] += self.vel[1]
-		self.pos[0] = self.newPos[0];
-		self.pos[1] = self.newPos[1];
 	}
 	return self;
 }
