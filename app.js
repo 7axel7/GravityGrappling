@@ -142,9 +142,9 @@ var Entity = function(){
 				maybePos[1] += bumpOut[1];
 				if (Math.hypot(maybePos[0] - x[0], maybePos[1] - y[0]) >= Math.hypot(self.newPos[0] - x[0], self.newPos[1] - y[0])){
 					self.newPos = maybePos
-					pushAmount = Math.hypot(self.vel[0],self.vel[1])*Math.sin(angDiff)
-					self.vel[0] += pushAmount * Math.cos(wallAng + Math.PI/2)
-					self.vel[1] += pushAmount * Math.sin(wallAng + Math.PI/2)
+					pushAmount = Math.hypot(self.vel[0],self.vel[1])*Math.cos(angDiff)
+					self.vel[0] += -1*pushAmount * Math.cos(wallAng)
+					self.vel[1] += -1*pushAmount * Math.sin(wallAng)
 					self.touching.pop();	
 					self.touching.push(wall);
 				}
@@ -190,9 +190,9 @@ var Entity = function(){
 			maybePos[1] += bumpOut[1];
 			if (Math.hypot(maybePos[0] - x[0], maybePos[1] - y[0]) >= Math.hypot(self.newPos[0] - x[0], self.newPos[1] - y[0])){
 				self.newPos = maybePos
-				pushAmount = Math.hypot(self.vel[0],self.vel[1])*Math.sin(angDiff)
-				self.vel[0] += pushAmount * Math.cos(wallAng + Math.PI/2)
-				self.vel[1] += pushAmount * Math.sin(wallAng + Math.PI/2)
+				pushAmount = Math.hypot(self.vel[0],self.vel[1])*Math.cos(angDiff)
+				self.vel[0] += -1*pushAmount * Math.cos(wallAng)
+				self.vel[1] += -1*pushAmount * Math.sin(wallAng)
 				self.touching.pop();	
 				self.touching.push(wall);
 			}
