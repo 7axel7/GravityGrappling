@@ -78,15 +78,14 @@ var Entity = function(){
 		self.touching = [];
 		for(var i in Wall.list){
 			var wall = Wall.list[i]; //loop through all walls
-			if (Math.sqrt(Math.pow(wall.midx - self.pos[0], 2) + 
-			Math.pow(wall.midy - self.pos[1], 2))<= self.render){ //first stage detection (tests wall's midpoint for render distance)
-				if (Math.min(wall.x1, wall.x2) - self.rad < self.pos[0] &&
-				Math.max(wall.x1, wall.x2) + self.rad > self.pos[0] &&
-				Math.min(wall.y1, wall.y2) - self.rad < self.pos[1] &&
-				Math.max(wall.y1, wall.y2) + self.rad > self.pos[1]){ //second stage detection (minimum bounding box + player's radius)
-					self.collideSnap(wall);
-				}
+			minX = Math.min(wall.x1,wall.x2) - 2*self.rad;
+			maxX = Math.max(wall.x1,wall.x2) + 2*self.rad;
+			minY = Math.min(wall.y1,wall.y2) - 2*self.rad;
+			maxY = Math.max(wall.y1,wall.y2) + 2*self.rad;
+			if (minX <= self.pos[0] && self.pos[0] <= maxX && minY <= self.pos[1] && self.pos[1] <= maxY){
+				self.collideSnap(wall);
 			}
+			
 		}
 	} //find applicable walls and applies collision
 
@@ -115,55 +114,57 @@ var Entity = function(){
 
 	self.collideSnap = function(wall) { // boundary is [x1,y1,x2,y2]
 		//check if it intersects
+		// v × w -> v.x w.y − v.y w.x
+		// https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
 		var x = [self.pos[0], self.newPos[0], wall.x1, wall.x2]
 		var y = [self.pos[1], self.newPos[1], wall.y1, wall.y2]
-		var a = ((y[2]-y[3])*(x[0]-x[2]) + (x[3]-x[2])*(y[0]-y[2]))/((x[3]-x[2])*(y[0]-y[1])-(x[0]-x[1])*(y[3]-y[2])); //intersection point scalar 1
-		var b = ((y[0]-y[1])*(x[0]-x[2]) + (x[1]-x[0])*(y[0]-y[2]))/((x[3]-x[2])*(y[0]-y[1])-(x[0]-x[1])*(y[3]-y[2])); //intersection point scalar 2
+		var r = [x[1] - x[0], y[1] - y[0]]
+		var s = [x[3] - x[2], y[3] - y[2]]
+		var v = [x[2] - x[0], y[2] - y[0]] //q - p
+		var w = r[0] * s[1] - r[1] * s[0] // r * s
 		var minDistance;
-
-
-		if (0<=a<=1 && 0<=b<=1){ //This is true if it intersects
-			minDistance = 0
+		var t;
+		var u;
+		if (w != 0){
+			t = (v[0] * s[1] - v[1] * s[0]) / w  //(q − p) × s / (r × s)
+			u = (v[0] * r[1] - v[1] * r[0]) / w  //(q − p) × r / (r × s)
 		}
-		else { //Check if it brushes close enough
-			var distances = [null,null,null,null];
-			var u;
-			var intX;
-			var intY;
-			for (i = 0; i < 4; i++) {
-				if (i < 3){ //Check the wall if it's the player's movement
-					wallX1 = x[2]
-					wallX2 = x[3]
-					wallY1 = y[2]
-					wallY2 = y[3]
-				}
-				else{ //Check the player's movement if it's the wall
-					wallX1 = x[0]
-					wallX2 = x[1]
-					wallY1 = y[0]
-					wallY2 = y[1]
-				}
-				u = ((x[i] - wallX1)*(wallX2 - wallX1) + (y[i] - wallY1)*(wallY2 - wallY1))/(Math.hypot(wallX2-wallX1,wallY2-wallY1)**2)
-				intX = wallX1 + u*(wallX2 - wallX1)
-				intY = wallY1 + u*(wallY2 - wallY1)
-				distances[i] = Math.hypot(x[i]-intX, y[i]-intY)
-				console.log(minDistance)
+
+		var distances = [null,null,null,null];
+		var intX;
+		var intY;
+		for (i = 0; i < 4; i++) {
+			if (i < 2){ //Check the wall if it's the player's movement
+				wallX1 = x[2]
+				wallX2 = x[3]
+				wallY1 = y[2]
+				wallY2 = y[3]
 			}
-			minDistance = min(distances);
-		}	
+			else{ //Check the player's movement if it's the wall
+				wallX1 = x[0]
+				wallX2 = x[1]
+				wallY1 = y[0]
+				wallY2 = y[1]
+			}
+			z = ((x[i] - wallX1)*(wallX2 - wallX1) + (y[i] - wallY1)*(wallY2 - wallY1)) / Math.hypot(wallX2-wallX1,wallY2-wallY1)
+			intX = wallX1 + z*(wallX2 - wallX1)
+			intY = wallY1 + z*(wallY2 - wallY1)
+			distances[i] = Math.hypot(x[i]-intX, y[i]-intY)
+			//console.log(x[i],intX, y[i],intY)
+		}
+		minDistance = Math.min(distances[0],distances[1],distances[2],distances[3]);
+		console.log(minDistance)
 		if (minDistance < self.rad) { //If the wall is touched
 			var wallAng = Math.atan2(y[3] - y[2], x[3] - x[2]);
 			var playerAng = Math.atan2(y[1]-y[0], x[1]-x[0]); //find the angle you're moving in, and the mag
 			var angDiff = Math.abs(playerAng - wallAng); //take theta
-
-			var bumpOut = depolarize(Math.sin(angDiff)*self.rad,-playerAng); //plus extra to push you out of the wall
+			var bumpOut = depolarize(1/Math.sin(angDiff)*self.rad,-playerAng); //plus extra to push you out of the wall
 			var maybePos = [0,0];
-
-			maybePos[0] = x[0] + (x[1]-x[0]); //Times A??? WHATT That breaks everything
-			maybePos[1] = y[0] + (y[1]-y[0]);
+			maybePos[0] = intX; 
+			maybePos[1] = intY;
 			//console.log(self.newPos,bumpOut)
-			//maybePos[0] += bumpOut[0];
-			//maybePos[1] += bumpOut[1];
+			maybePos[0] += bumpOut[0];
+			maybePos[1] += bumpOut[1];
 			if (Math.hypot(maybePos[0] - x[0], maybePos[1] - y[0]) >= Math.hypot(self.newPos[0] - x[0], self.newPos[1] - y[0])){
 				self.newPos = maybePos
 				self.vel[0] += Math.hypot(self.vel[0],self.vel[1])*Math.cos(angDiff)
@@ -693,6 +694,7 @@ var mapRead = function(){ //reads map and makes walls according to it
 			}
 		}
 	})
+
 }
 
 mapRead();

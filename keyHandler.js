@@ -1,13 +1,4 @@
-var rotato = function(x, y, thetaa){
-  var r = [
-    [Math.cos(thetaa), Math.sin(thetaa)],
-    [-Math.sin(thetaa), Math.cos(thetaa)]
-  ]
-  var rX = r[0][0] * x + r[0][1] * y;
-  var rY = r[1][0] * x + r[1][1] * y;
-  return [rX, rY];
-  //console.log(r[0][0], r[0][1], r[1][0], r[1][1]);
-}
+
 var keyList = [
   [-1], //LClick
   [-1], //RClick
